@@ -436,16 +436,21 @@ export class inspectorComponent {
 
     const viewport = getViewportSize();
     this.textBlocks.set(
-      getVisibleTextBlocks(this.overlayRoot()?.nativeElement ?? null).map(
-        (block) => ({
+      getVisibleTextBlocks(this.overlayRoot()?.nativeElement ?? null)
+        .filter((block) => 
+          block.rect.top >= 0 && 
+          block.rect.top <= viewport.height &&
+          block.rect.left >= 0 && 
+          block.rect.left <= viewport.width
+        )
+        .map((block) => ({
           ...block,
           rect: {
             ...block.rect,
             left: clamp(block.rect.left, 0, viewport.width - 12),
             top: clamp(block.rect.top, 14, viewport.height),
           },
-        }),
-      ),
+        })),
     );
   }
 
