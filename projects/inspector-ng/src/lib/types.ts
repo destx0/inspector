@@ -17,7 +17,7 @@ export type NormalizedRect = {
   height: number;
 };
 
-export type GuideOrientation = 'vertical' | 'horizontal';
+export type GuideOrientation = "vertical" | "horizontal";
 
 export type BoxEdges = {
   top: number;
@@ -32,7 +32,7 @@ export type Guide = {
   position: number;
 };
 
-export type ToolMode = 'none' | 'select' | 'guides';
+export type ToolMode = "none" | "select" | "guides";
 
 export type TextInspection = {
   fontFamily: string;
@@ -90,7 +90,7 @@ export type DistanceOverlay = {
   }>;
 };
 
-export type InspenctorPersistedState = {
+export type inspectorPersistedState = {
   version: 1;
   enabled: boolean;
   toolMode: ToolMode;

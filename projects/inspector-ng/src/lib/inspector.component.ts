@@ -10,56 +10,56 @@ import {
   effect,
   signal,
   viewChild,
-} from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+} from "@angular/core";
+import { isPlatformBrowser } from "@angular/common";
 import {
   GUIDE_HITBOX_SIZE,
   GUIDE_SNAP_DISTANCE,
-  INSPENCTOR_STATE_VERSION,
-  INSPENCTOR_STORAGE_KEY,
-} from './constants';
+  inspector_STATE_VERSION,
+  inspector_STORAGE_KEY,
+} from "./constants";
 import {
   getInspectMeasurement,
   getRectFromDom,
   getTargetElement,
   getVisibleTextBlocks,
-} from './dom';
-import { getDistanceOverlay } from './distances';
-import { clamp, getViewportSize, rectsEqual } from './geometry';
+} from "./dom";
+import { getDistanceOverlay } from "./distances";
+import { clamp, getViewportSize, rectsEqual } from "./geometry";
 import {
   DistanceOverlay,
   Guide,
   GuideOrientation,
   InspectMeasurement,
-  InspenctorPersistedState,
+  inspectorPersistedState,
   Rect,
   TextBlockAnnotation,
   ToolMode,
-} from './types';
-import { createId, formatValue } from './utils';
+} from "./types";
+import { createId, formatValue } from "./utils";
 
 @Component({
-  selector: 'inspenctor-overlay',
+  selector: "inspector-overlay",
   standalone: true,
   imports: [],
-  templateUrl: './inspenctor.component.html',
-  styleUrl: './inspenctor.component.css',
+  templateUrl: "./inspector.component.html",
+  styleUrl: "./inspector.component.css",
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class InspenctorComponent {
+export class inspectorComponent {
   readonly Math = Math;
   readonly formatValue = formatValue;
   readonly guideHitboxSize = GUIDE_HITBOX_SIZE;
-  readonly overlayRoot = viewChild<ElementRef<HTMLElement>>('overlayRoot');
+  readonly overlayRoot = viewChild<ElementRef<HTMLElement>>("overlayRoot");
 
-  @Input() highlightColor = '#4f8cff';
-  @Input() guideColor = '#ff7a00';
+  @Input() highlightColor = "#4f8cff";
+  @Input() guideColor = "#ff7a00";
   @Input() hoverHighlightEnabled = true;
   @Input() persistOnReload = false;
 
   readonly enabled = signal(false);
-  readonly toolMode = signal<ToolMode>('none');
-  readonly guideOrientation = signal<GuideOrientation>('vertical');
+  readonly toolMode = signal<ToolMode>("none");
+  readonly guideOrientation = signal<GuideOrientation>("vertical");
   readonly guides = signal<Guide[]>([]);
   readonly hoverRect = signal<Rect | null>(null);
   readonly selectedGuideId = signal<string | null>(null);
@@ -73,7 +73,7 @@ export class InspenctorComponent {
   readonly selectedMetaLine = computed(() => {
     const selected = this.selectedMeasurement();
     if (!selected) {
-      return '';
+      return "";
     }
     return `${selected.label} · ${selected.styles.fontSize} / ${selected.styles.lineHeight} / ${selected.styles.color}`;
   });
@@ -88,7 +88,9 @@ export class InspenctorComponent {
 
   readonly canUndo = computed(() => this.historyIndex() > 0);
   readonly canRedo = computed(
-    () => this.historyIndex() >= 0 && this.historyIndex() < this.history().length - 1,
+    () =>
+      this.historyIndex() >= 0 &&
+      this.historyIndex() < this.history().length - 1,
   );
 
   constructor(@Inject(PLATFORM_ID) platformId: object) {
@@ -99,8 +101,8 @@ export class InspenctorComponent {
         return;
       }
 
-      const payload: InspenctorPersistedState = {
-        version: INSPENCTOR_STATE_VERSION,
+      const payload: inspectorPersistedState = {
+        version: inspector_STATE_VERSION,
         enabled: this.enabled(),
         toolMode: this.toolMode(),
         guideOrientation: this.guideOrientation(),
@@ -108,7 +110,10 @@ export class InspenctorComponent {
         showTypography: this.showTypography(),
       };
 
-      window.localStorage.setItem(INSPENCTOR_STORAGE_KEY, JSON.stringify(payload));
+      window.localStorage.setItem(
+        inspector_STORAGE_KEY,
+        JSON.stringify(payload),
+      );
     });
   }
 
@@ -118,15 +123,15 @@ export class InspenctorComponent {
       return;
     }
 
-    const stored = window.localStorage.getItem(INSPENCTOR_STORAGE_KEY);
+    const stored = window.localStorage.getItem(inspector_STORAGE_KEY);
     if (!stored) {
       this.hydrated.set(true);
       return;
     }
 
     try {
-      const parsed = JSON.parse(stored) as InspenctorPersistedState;
-      if (parsed.version === INSPENCTOR_STATE_VERSION) {
+      const parsed = JSON.parse(stored) as inspectorPersistedState;
+      if (parsed.version === inspector_STATE_VERSION) {
         this.enabled.set(parsed.enabled);
         this.toolMode.set(parsed.toolMode);
         this.guideOrientation.set(parsed.guideOrientation);
@@ -147,7 +152,7 @@ export class InspenctorComponent {
       this.enabled.set(true);
     }
 
-    this.toolMode.set(this.toolMode() === mode ? 'none' : mode);
+    this.toolMode.set(this.toolMode() === mode ? "none" : mode);
     this.hoverRect.set(null);
     this.distanceOverlay.set(null);
     this.refreshTypographyBlocks();
@@ -174,8 +179,10 @@ export class InspenctorComponent {
 
   trackGuide = (_index: number, guide: Guide) => guide.id;
   trackTextBlock = (_index: number, block: TextBlockAnnotation) => block.id;
-  trackConnector = (_index: number, connector: DistanceOverlay['connectors'][number]) =>
-    `${connector.x1}:${connector.y1}:${connector.x2}:${connector.y2}`;
+  trackConnector = (
+    _index: number,
+    connector: DistanceOverlay["connectors"][number],
+  ) => `${connector.x1}:${connector.y1}:${connector.x2}:${connector.y2}`;
 
   startGuideDrag(event: PointerEvent, guide: Guide) {
     event.preventDefault();
@@ -184,7 +191,7 @@ export class InspenctorComponent {
     this.selectedGuideId.set(guide.id);
   }
 
-  formatEdges(edges: InspectMeasurement['padding']) {
+  formatEdges(edges: InspectMeasurement["padding"]) {
     return `${formatValue(edges.top)} ${formatValue(edges.right)} ${formatValue(edges.bottom)} ${formatValue(edges.left)}`;
   }
 
@@ -192,15 +199,15 @@ export class InspenctorComponent {
     return `${formatValue(selected.gap.row)} / ${formatValue(selected.gap.column)}`;
   }
 
-  @HostListener('window:keydown', ['$event'])
+  @HostListener("window:keydown", ["$event"])
   handleKeydown(event: KeyboardEvent) {
     const key = event.key.toLowerCase();
 
-    if (key === 'm') {
+    if (key === "m") {
       event.preventDefault();
       this.enabled.update((value) => !value);
       if (!this.enabled()) {
-        this.toolMode.set('none');
+        this.toolMode.set("none");
         this.hoverRect.set(null);
         this.selectedGuideId.set(null);
         this.distanceOverlay.set(null);
@@ -214,43 +221,43 @@ export class InspenctorComponent {
       return;
     }
 
-    if ((event.metaKey || event.ctrlKey) && key === 'z') {
+    if ((event.metaKey || event.ctrlKey) && key === "z") {
       event.preventDefault();
       event.shiftKey ? this.redo() : this.undo();
       return;
     }
 
-    if (key === 's') {
+    if (key === "s") {
       event.preventDefault();
-      this.setToolMode('select');
+      this.setToolMode("select");
       return;
     }
 
-    if (key === 'g') {
+    if (key === "g") {
       event.preventDefault();
-      this.setToolMode('guides');
+      this.setToolMode("guides");
       return;
     }
 
-    if (key === 'h') {
+    if (key === "h") {
       event.preventDefault();
-      this.setGuideOrientation('horizontal');
+      this.setGuideOrientation("horizontal");
       return;
     }
 
-    if (key === 'v') {
+    if (key === "v") {
       event.preventDefault();
-      this.setGuideOrientation('vertical');
+      this.setGuideOrientation("vertical");
       return;
     }
 
-    if (event.key === 'Alt') {
+    if (event.key === "Alt") {
       this.altPressed.set(true);
       this.updateDistanceOverlay();
       return;
     }
 
-    if (key === 'escape') {
+    if (key === "escape") {
       event.preventDefault();
       this.selectedMeasurement.set(null);
       this.selectedGuideId.set(null);
@@ -263,24 +270,26 @@ export class InspenctorComponent {
       return;
     }
 
-    if ((key === 'backspace' || key === 'delete') && this.selectedGuideId()) {
+    if ((key === "backspace" || key === "delete") && this.selectedGuideId()) {
       event.preventDefault();
-      const nextGuides = this.guides().filter((guide) => guide.id !== this.selectedGuideId());
+      const nextGuides = this.guides().filter(
+        (guide) => guide.id !== this.selectedGuideId(),
+      );
       this.guides.set(nextGuides);
       this.selectedGuideId.set(null);
       this.recordHistory(nextGuides);
     }
   }
 
-  @HostListener('window:keyup', ['$event'])
+  @HostListener("window:keyup", ["$event"])
   handleKeyup(event: KeyboardEvent) {
-    if (event.key === 'Alt') {
+    if (event.key === "Alt") {
       this.altPressed.set(false);
       this.distanceOverlay.set(null);
     }
   }
 
-  @HostListener('window:pointermove', ['$event'])
+  @HostListener("window:pointermove", ["$event"])
   handlePointerMove(event: PointerEvent) {
     if (!this.enabled() || !this.isBrowser) {
       return;
@@ -293,15 +302,17 @@ export class InspenctorComponent {
           if (guide.id !== this.draggingGuideId) {
             return guide;
           }
-          const rawPosition = guide.orientation === 'vertical' ? event.clientX : event.clientY;
-          const max = guide.orientation === 'vertical' ? viewport.width : viewport.height;
+          const rawPosition =
+            guide.orientation === "vertical" ? event.clientX : event.clientY;
+          const max =
+            guide.orientation === "vertical" ? viewport.width : viewport.height;
           return { ...guide, position: clamp(rawPosition, 0, max) };
         }),
       );
       return;
     }
 
-    if (this.toolMode() !== 'select' || !this.hoverHighlightEnabled) {
+    if (this.toolMode() !== "select" || !this.hoverHighlightEnabled) {
       this.hoverRect.set(null);
       this.hoverElement = null;
       if (!this.altPressed()) {
@@ -329,7 +340,7 @@ export class InspenctorComponent {
     this.refreshTypographyBlocks();
   }
 
-  @HostListener('window:pointerup')
+  @HostListener("window:pointerup")
   handlePointerUp() {
     if (!this.draggingGuideId) {
       return;
@@ -338,7 +349,7 @@ export class InspenctorComponent {
     this.draggingGuideId = null;
   }
 
-  @HostListener('window:click', ['$event'])
+  @HostListener("window:click", ["$event"])
   handleClick(event: MouseEvent) {
     if (!this.enabled() || !this.isBrowser) {
       return;
@@ -346,7 +357,7 @@ export class InspenctorComponent {
 
     const overlay = this.overlayRoot()?.nativeElement ?? null;
 
-    if (this.toolMode() === 'guides') {
+    if (this.toolMode() === "guides") {
       if (overlay && overlay.contains(event.target as Node)) {
         return;
       }
@@ -354,18 +365,21 @@ export class InspenctorComponent {
         id: createId(),
         orientation: this.guideOrientation(),
         position:
-          this.guideOrientation() === 'vertical'
+          this.guideOrientation() === "vertical"
             ? this.snapGuide(event.clientX)
             : this.snapGuide(event.clientY),
       });
       return;
     }
 
-    if (this.toolMode() !== 'select') {
+    if (this.toolMode() !== "select") {
       return;
     }
 
-    const target = getTargetElement({ x: event.clientX, y: event.clientY }, overlay);
+    const target = getTargetElement(
+      { x: event.clientX, y: event.clientY },
+      overlay,
+    );
     if (!target) {
       this.selectedMeasurement.set(null);
       this.selectedElement = null;
@@ -376,13 +390,15 @@ export class InspenctorComponent {
 
     this.selectedMeasurement.set(getInspectMeasurement(target));
     this.selectedElement = target;
-    this.selectedGuideId.set(this.findGuideAtPoint(event.clientX, event.clientY));
+    this.selectedGuideId.set(
+      this.findGuideAtPoint(event.clientX, event.clientY),
+    );
     this.updateDistanceOverlay();
     this.refreshTypographyBlocks();
   }
 
-  @HostListener('window:resize')
-  @HostListener('window:scroll')
+  @HostListener("window:resize")
+  @HostListener("window:scroll")
   handleViewportChange() {
     if (this.selectedElement && document.contains(this.selectedElement)) {
       this.selectedMeasurement.set(getInspectMeasurement(this.selectedElement));
@@ -405,7 +421,10 @@ export class InspenctorComponent {
     }
 
     this.distanceOverlay.set(
-      getDistanceOverlay(getRectFromDom(this.selectedElement), getRectFromDom(this.hoverElement)),
+      getDistanceOverlay(
+        getRectFromDom(this.selectedElement),
+        getRectFromDom(this.hoverElement),
+      ),
     );
   }
 
@@ -417,14 +436,16 @@ export class InspenctorComponent {
 
     const viewport = getViewportSize();
     this.textBlocks.set(
-      getVisibleTextBlocks(this.overlayRoot()?.nativeElement ?? null).map((block) => ({
-        ...block,
-        rect: {
-          ...block.rect,
-          left: clamp(block.rect.left, 0, viewport.width - 12),
-          top: clamp(block.rect.top, 14, viewport.height),
-        },
-      })),
+      getVisibleTextBlocks(this.overlayRoot()?.nativeElement ?? null).map(
+        (block) => ({
+          ...block,
+          rect: {
+            ...block.rect,
+            left: clamp(block.rect.left, 0, viewport.width - 12),
+            top: clamp(block.rect.top, 14, viewport.height),
+          },
+        }),
+      ),
     );
   }
 
@@ -446,10 +467,16 @@ export class InspenctorComponent {
 
   private findGuideAtPoint(x: number, y: number) {
     for (const guide of this.guides()) {
-      if (guide.orientation === 'vertical' && Math.abs(guide.position - x) <= GUIDE_HITBOX_SIZE) {
+      if (
+        guide.orientation === "vertical" &&
+        Math.abs(guide.position - x) <= GUIDE_HITBOX_SIZE
+      ) {
         return guide.id;
       }
-      if (guide.orientation === 'horizontal' && Math.abs(guide.position - y) <= GUIDE_HITBOX_SIZE) {
+      if (
+        guide.orientation === "horizontal" &&
+        Math.abs(guide.position - y) <= GUIDE_HITBOX_SIZE
+      ) {
         return guide.id;
       }
     }

@@ -1,9 +1,9 @@
-<div class="inspenctor-root" #overlayRoot>
-  <div class="inspenctor-toolbar">
-    <div class="inspenctor-toolbar__rail">
+<div class="inspector-root" #overlayRoot>
+  <div class="inspector-toolbar">
+    <div class="inspector-toolbar__rail">
       <button
         type="button"
-        class="inspenctor-icon-button"
+        class="inspector-icon-button"
         [class.is-active]="toolMode() === 'select'"
         (click)="setToolMode('select')"
         title="Select mode"
@@ -13,10 +13,10 @@
         </svg>
       </button>
 
-      <div class="inspenctor-guide-group">
+      <div class="inspector-guide-group">
         <button
           type="button"
-          class="inspenctor-icon-button"
+          class="inspector-icon-button"
           [class.is-active]="toolMode() === 'guides'"
           (click)="setToolMode('guides')"
           title="Guides mode"
@@ -28,7 +28,7 @@
 
         <button
           type="button"
-          class="inspenctor-icon-button inspenctor-icon-button--ghost"
+          class="inspector-icon-button inspector-icon-button--ghost"
           [class.is-active]="guideMenuOpen()"
           (click)="toggleGuideMenu()"
           title="Guide options"
@@ -39,10 +39,10 @@
         </button>
 
         @if (guideMenuOpen()) {
-          <div class="inspenctor-guide-menu">
+          <div class="inspector-guide-menu">
             <button
               type="button"
-              class="inspenctor-segment"
+              class="inspector-segment"
               [class.is-active]="guideOrientation() === 'vertical'"
               (click)="setGuideOrientation('vertical')"
             >
@@ -50,13 +50,17 @@
             </button>
             <button
               type="button"
-              class="inspenctor-segment"
+              class="inspector-segment"
               [class.is-active]="guideOrientation() === 'horizontal'"
               (click)="setGuideOrientation('horizontal')"
             >
               Horizontal
             </button>
-            <button type="button" class="inspenctor-segment inspenctor-segment--danger" (click)="clearGuides()">
+            <button
+              type="button"
+              class="inspector-segment inspector-segment--danger"
+              (click)="clearGuides()"
+            >
               Clear
             </button>
           </div>
@@ -65,7 +69,7 @@
 
       <button
         type="button"
-        class="inspenctor-icon-button"
+        class="inspector-icon-button"
         [class.is-active]="showTypography()"
         (click)="toggleTypography()"
         title="Typography mode"
@@ -74,33 +78,32 @@
           <path d="M3 4V2h10v2h-4v10H7V4z" />
         </svg>
       </button>
-
     </div>
   </div>
 
-  @if (enabled() && toolMode() === 'select') {
+  @if (enabled() && toolMode() === "select") {
     @if (hoverRect() && hoverHighlightEnabled) {
       <div
-        class="inspenctor-box inspenctor-box--hover"
+        class="inspector-box inspector-box--hover"
         [style.left.px]="hoverRect()!.left"
         [style.top.px]="hoverRect()!.top"
         [style.width.px]="hoverRect()!.width"
         [style.height.px]="hoverRect()!.height"
-        [style.--inspenctor-accent]="highlightColor"
+        [style.--inspector-accent]="highlightColor"
       ></div>
     }
 
     @if (selectedMeasurement(); as selected) {
       @if (selected.gap.active && selected.parentRect) {
         <div
-          class="inspenctor-box inspenctor-box--gap"
+          class="inspector-box inspector-box--gap"
           [style.left.px]="selected.parentRect.left"
           [style.top.px]="selected.parentRect.top"
           [style.width.px]="selected.parentRect.width"
           [style.height.px]="selected.parentRect.height"
         ></div>
         <div
-          class="inspenctor-box-tag inspenctor-box-tag--gap"
+          class="inspector-box-tag inspector-box-tag--gap"
           [style.left.px]="selected.parentRect.left"
           [style.top.px]="selected.parentRect.top - 8"
         >
@@ -109,14 +112,14 @@
       }
 
       <div
-        class="inspenctor-box inspenctor-box--margin"
+        class="inspector-box inspector-box--margin"
         [style.left.px]="selected.marginRect.left"
         [style.top.px]="selected.marginRect.top"
         [style.width.px]="selected.marginRect.width"
         [style.height.px]="selected.marginRect.height"
       ></div>
       <div
-        class="inspenctor-box-tag inspenctor-box-tag--margin"
+        class="inspector-box-tag inspector-box-tag--margin"
         [style.left.px]="selected.marginRect.left"
         [style.top.px]="selected.marginRect.top - 8"
       >
@@ -124,27 +127,29 @@
       </div>
 
       <div
-        class="inspenctor-box inspenctor-box--selected"
+        class="inspector-box inspector-box--selected"
         [style.left.px]="selected.rect.left"
         [style.top.px]="selected.rect.top"
         [style.width.px]="selected.rect.width"
         [style.height.px]="selected.rect.height"
-        [style.--inspenctor-accent]="highlightColor"
+        [style.--inspector-accent]="highlightColor"
       >
-        <div class="inspenctor-label">{{ selectedMetaLine() }}</div>
+        <div class="inspector-label">{{ selectedMetaLine() }}</div>
       </div>
 
       <div
-        class="inspenctor-box inspenctor-box--padding"
+        class="inspector-box inspector-box--padding"
         [style.left.px]="selected.paddingRect.left"
         [style.top.px]="selected.paddingRect.top"
         [style.width.px]="selected.paddingRect.width"
         [style.height.px]="selected.paddingRect.height"
       ></div>
       <div
-        class="inspenctor-box-tag inspenctor-box-tag--padding"
+        class="inspector-box-tag inspector-box-tag--padding"
         [style.left.px]="selected.paddingRect.left"
-        [style.top.px]="selected.paddingRect.top + selected.paddingRect.height + 8"
+        [style.top.px]="
+          selected.paddingRect.top + selected.paddingRect.height + 8
+        "
       >
         P {{ formatEdges(selected.padding) }}
       </div>
@@ -154,11 +159,14 @@
   @if (enabled() && showTypography()) {
     @for (block of textBlocks(); track block.id) {
       <div
-        class="inspenctor-text-chip"
+        class="inspector-text-chip"
         [style.left.px]="block.rect.left"
         [style.top.px]="block.rect.top - 8"
       >
-        <span class="inspenctor-text-chip__swatch" [style.background]="block.styles.color"></span>
+        <span
+          class="inspector-text-chip__swatch"
+          [style.background]="block.styles.color"
+        ></span>
         <span>{{ block.styles.fontSize }}</span>
         <span>{{ block.styles.lineHeight }}</span>
         <span>{{ block.styles.color }}</span>
@@ -168,25 +176,28 @@
 
   @if (enabled() && altPressed() && distanceOverlay(); as distance) {
     <div
-      class="inspenctor-box inspenctor-box--distance"
+      class="inspector-box inspector-box--distance"
       [style.left.px]="distance.rectA.left"
       [style.top.px]="distance.rectA.top"
       [style.width.px]="distance.rectA.width"
       [style.height.px]="distance.rectA.height"
     ></div>
     <div
-      class="inspenctor-box inspenctor-box--distance"
+      class="inspector-box inspector-box--distance"
       [style.left.px]="distance.rectB.left"
       [style.top.px]="distance.rectB.top"
       [style.width.px]="distance.rectB.width"
       [style.height.px]="distance.rectB.height"
     ></div>
 
-    @for (connector of distance.connectors; track trackConnector($index, connector)) {
+    @for (
+      connector of distance.connectors;
+      track trackConnector($index, connector)
+    ) {
       <div
-        class="inspenctor-connector"
-        [class.inspenctor-connector--vertical]="connector.x1 === connector.x2"
-        [class.inspenctor-connector--horizontal]="connector.y1 === connector.y2"
+        class="inspector-connector"
+        [class.inspector-connector--vertical]="connector.x1 === connector.x2"
+        [class.inspector-connector--horizontal]="connector.y1 === connector.y2"
         [style.left.px]="Math.min(connector.x1, connector.x2)"
         [style.top.px]="Math.min(connector.y1, connector.y2)"
         [style.width.px]="Math.max(1, Math.abs(connector.x2 - connector.x1))"
@@ -196,14 +207,20 @@
 
     @if (distance.horizontal && distance.horizontal.value > 0) {
       <div
-        class="inspenctor-distance-line inspenctor-distance-line--horizontal"
-        [style.left.px]="Math.min(distance.horizontal.x1!, distance.horizontal.x2!)"
+        class="inspector-distance-line inspector-distance-line--horizontal"
+        [style.left.px]="
+          Math.min(distance.horizontal.x1!, distance.horizontal.x2!)
+        "
         [style.top.px]="distance.horizontal.y!"
-        [style.width.px]="Math.abs(distance.horizontal.x2! - distance.horizontal.x1!)"
+        [style.width.px]="
+          Math.abs(distance.horizontal.x2! - distance.horizontal.x1!)
+        "
       ></div>
       <div
-        class="inspenctor-distance-tag"
-        [style.left.px]="(distance.horizontal.x1! + distance.horizontal.x2!) / 2"
+        class="inspector-distance-tag"
+        [style.left.px]="
+          (distance.horizontal.x1! + distance.horizontal.x2!) / 2
+        "
         [style.top.px]="distance.horizontal.y! + 10"
       >
         {{ formatValue(distance.horizontal.value) }}
@@ -212,13 +229,15 @@
 
     @if (distance.vertical && distance.vertical.value > 0) {
       <div
-        class="inspenctor-distance-line inspenctor-distance-line--vertical"
+        class="inspector-distance-line inspector-distance-line--vertical"
         [style.left.px]="distance.vertical.x!"
         [style.top.px]="Math.min(distance.vertical.y1!, distance.vertical.y2!)"
-        [style.height.px]="Math.abs(distance.vertical.y2! - distance.vertical.y1!)"
+        [style.height.px]="
+          Math.abs(distance.vertical.y2! - distance.vertical.y1!)
+        "
       ></div>
       <div
-        class="inspenctor-distance-tag inspenctor-distance-tag--vertical"
+        class="inspector-distance-tag inspector-distance-tag--vertical"
         [style.left.px]="distance.vertical.x! + 10"
         [style.top.px]="(distance.vertical.y1! + distance.vertical.y2!) / 2"
       >
@@ -231,16 +250,20 @@
     @for (guide of guides(); track guide.id) {
       <button
         type="button"
-        class="inspenctor-guide"
-        [class.inspenctor-guide--vertical]="guide.orientation === 'vertical'"
-        [class.inspenctor-guide--horizontal]="guide.orientation === 'horizontal'"
-        [class.inspenctor-guide--selected]="selectedGuideId() === guide.id"
-        [style.left.px]="guide.orientation === 'vertical' ? guide.position : null"
-        [style.top.px]="guide.orientation === 'horizontal' ? guide.position : null"
-        [style.--inspenctor-guide]="guideColor"
+        class="inspector-guide"
+        [class.inspector-guide--vertical]="guide.orientation === 'vertical'"
+        [class.inspector-guide--horizontal]="guide.orientation === 'horizontal'"
+        [class.inspector-guide--selected]="selectedGuideId() === guide.id"
+        [style.left.px]="
+          guide.orientation === 'vertical' ? guide.position : null
+        "
+        [style.top.px]="
+          guide.orientation === 'horizontal' ? guide.position : null
+        "
+        [style.--inspector-guide]="guideColor"
         (pointerdown)="startGuideDrag($event, guide)"
       >
-        <span class="inspenctor-guide-line"></span>
+        <span class="inspector-guide-line"></span>
       </button>
     }
   }

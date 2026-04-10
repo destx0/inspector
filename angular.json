@@ -6,23 +6,23 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "inspenctor": {
+    "inspector-ng": {
       "projectType": "library",
-      "root": "projects/inspenctor",
-      "sourceRoot": "projects/inspenctor/src",
+      "root": "projects/inspector-ng",
+      "sourceRoot": "projects/inspector-ng/src",
       "prefix": "lib",
       "architect": {
         "build": {
           "builder": "@angular-devkit/build-angular:ng-packagr",
           "options": {
-            "project": "projects/inspenctor/ng-package.json"
+            "project": "projects/inspector-ng/ng-package.json"
           },
           "configurations": {
             "production": {
-              "tsConfig": "projects/inspenctor/tsconfig.lib.prod.json"
+              "tsConfig": "projects/inspector-ng/tsconfig.lib.prod.json"
             },
             "development": {
-              "tsConfig": "projects/inspenctor/tsconfig.lib.json"
+              "tsConfig": "projects/inspector-ng/tsconfig.lib.json"
             }
           },
           "defaultConfiguration": "production"
@@ -30,11 +30,8 @@
         "test": {
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
-            "tsConfig": "projects/inspenctor/tsconfig.spec.json",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ]
+            "tsConfig": "projects/inspector-ng/tsconfig.spec.json",
+            "polyfills": ["zone.js", "zone.js/testing"]
           }
         }
       }
@@ -52,17 +49,13 @@
             "outputPath": "dist/demo",
             "index": "projects/demo/src/index.html",
             "browser": "projects/demo/src/main.ts",
-            "polyfills": [
-              "zone.js"
-            ],
+            "polyfills": ["zone.js"],
             "tsConfig": "projects/demo/tsconfig.app.json",
             "assets": [
               "projects/demo/src/favicon.ico",
               "projects/demo/src/assets"
             ],
-            "styles": [
-              "projects/demo/src/styles.css"
-            ],
+            "styles": ["projects/demo/src/styles.css"],
             "scripts": []
           },
           "configurations": {
@@ -110,18 +103,13 @@
         "test": {
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ],
+            "polyfills": ["zone.js", "zone.js/testing"],
             "tsConfig": "projects/demo/tsconfig.spec.json",
             "assets": [
               "projects/demo/src/favicon.ico",
               "projects/demo/src/assets"
             ],
-            "styles": [
-              "projects/demo/src/styles.css"
-            ],
+            "styles": ["projects/demo/src/styles.css"],
             "scripts": []
           }
         }
