@@ -1,35 +1,102 @@
-<main class="page-shell">
+<main class="docs-page">
   <section class="hero">
-    <p class="eyebrow">Angular 17 Port</p>
-    <h1>inspenctor</h1>
-    <p class="lede">
-      Angular recreation of the original mesurer overlay. Use the live page below
-      to test selection and guides directly in the demo app.
-    </p>
+    <div class="hero__content">
+      <p class="eyebrow">Angular 17 Library</p>
+      <h1>inspenctor</h1>
+      <p class="lede">
+        Compact on-screen inspection tools for Angular apps. Measure spacing, inspect typography, place guides, and check layout relationships directly in the browser.
+      </p>
+      <div class="hero__actions">
+        <a class="button button--primary" href="#installation">Installation</a>
+        <a class="button button--secondary" href="#usage">Usage</a>
+      </div>
+    </div>
+    <div class="hero__card">
+      <div class="terminal">
+        <span class="terminal__prompt">npm</span>
+        <code>install inspenctor</code>
+      </div>
+      <ul class="feature-list">
+        <li>Select elements and inspect typography</li>
+        <li>Annotate text blocks with font size, line height, and hex color</li>
+        <li>Hold <strong>Alt</strong> to measure section spacing</li>
+        <li>Create horizontal and vertical guides</li>
+      </ul>
+    </div>
   </section>
 
-  <section class="panel-grid">
-    <article class="panel card-a">
-      <h2>Canvas</h2>
-      <p>Tap <strong>M</strong> to toggle the overlay. Use <strong>S</strong> for select mode, <strong>G</strong> for guides, <strong>TYPE</strong> to annotate every text block with font size, line height, and color, and hold <strong>Alt</strong> to inspect spacing between sections.</p>
-      <div class="sample sample-stack">
-        <div class="sample-chip">Header</div>
-        <div class="sample-box primary">Primary Card</div>
-        <div class="sample-row">
-          <div class="sample-box accent">A</div>
-          <div class="sample-box">B</div>
-          <div class="sample-box muted">C</div>
-        </div>
+  <section class="content-grid">
+    <article class="doc-card" id="installation">
+      <p class="section-label">Installation</p>
+      <h2>Install the package</h2>
+      <p class="copy">
+        Add the library to your Angular app, then render the overlay once near the root of your application.
+      </p>
+      <pre class="code-block"><code>npm install inspenctor</code></pre>
+      <pre class="code-block"><code>pnpm add inspenctor</code></pre>
+    </article>
+
+    <article class="doc-card" id="usage">
+      <p class="section-label">Usage</p>
+      <h2>Mount the overlay once</h2>
+      <p class="copy">
+        Keep your app content unchanged and place the inspector at the end of the root template so it can observe the whole page.
+      </p>
+      <pre class="code-block"><code>&lt;app-shell /&gt;
+
+&lt;inspenctor-overlay
+  [persistOnReload]="true"
+  [hoverHighlightEnabled]="true"
+/&gt;</code></pre>
+    </article>
+  </section>
+
+  <section class="content-grid content-grid--stacked">
+    <article class="doc-card">
+      <p class="section-label">Shortcuts</p>
+      <h2>Default controls</h2>
+      <div class="shortcut-list">
+        <div><strong>M</strong><span>Toggle inspector</span></div>
+        <div><strong>S</strong><span>Select mode</span></div>
+        <div><strong>G</strong><span>Guides mode</span></div>
+        <div><strong>H / V</strong><span>Guide orientation</span></div>
+        <div><strong>Alt</strong><span>Measure spacing between sections</span></div>
+        <div><strong>Esc</strong><span>Clear active state</span></div>
       </div>
     </article>
 
-    <article class="panel card-b">
-      <h2>Spacing Targets</h2>
-      <p>These blocks are intentionally offset so the overlay has useful targets for page-wide typography labels, spacing checks, and guide placement.</p>
-      <div class="target-grid">
-        <div class="target tall">240 × 160</div>
-        <div class="target short">180 × 96</div>
-        <div class="target wide">320 × 72</div>
+    <article class="doc-card">
+      <p class="section-label">Live canvas</p>
+      <h2>Use this page to test the overlay</h2>
+      <p class="copy">
+        The layout below includes cards, text blocks, spacing gaps, and nested containers so you can verify typography mode, margin/padding overlays, gap labels, and distance measurement.
+      </p>
+      <div class="canvas">
+        <div class="canvas__row">
+          <div class="canvas__badge">Header</div>
+          <div class="canvas__badge canvas__badge--muted">Meta</div>
+        </div>
+        <div class="canvas__hero-card">
+          <p class="canvas__kicker">Product</p>
+          <h3>Measure, inspect, and align UI without leaving the browser.</h3>
+          <p>
+            Typography mode annotates visible text blocks. Selection mode shows font size, line height, hex color, padding, margin, and parent gap context.
+          </p>
+        </div>
+        <div class="canvas__grid">
+          <div class="sample-card sample-card--blue">
+            <h4>Typography</h4>
+            <p>Check font size, line height, and color labels right next to content.</p>
+          </div>
+          <div class="sample-card sample-card--amber">
+            <h4>Spacing</h4>
+            <p>Hold Alt after selecting an element to measure the gap to another section.</p>
+          </div>
+          <div class="sample-card">
+            <h4>Guides</h4>
+            <p>Place persistent guides and switch orientation from the compact toolbar.</p>
+          </div>
+        </div>
       </div>
     </article>
   </section>

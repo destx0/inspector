@@ -50,6 +50,12 @@ export type InspectMeasurement = {
   marginRect: Rect;
   padding: BoxEdges;
   margin: BoxEdges;
+  gap: {
+    row: number;
+    column: number;
+    active: boolean;
+  };
+  parentRect: Rect | null;
   label: string;
   styles: TextInspection;
 };

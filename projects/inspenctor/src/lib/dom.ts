@@ -59,6 +59,8 @@ const parseEdge = (value: string) => Number.parseFloat(value) || 0;
 export const getInspectMeasurement = (element: HTMLElement): InspectMeasurement => {
   const rect = getRectFromDom(element);
   const style = window.getComputedStyle(element);
+  const parentElement = element.parentElement;
+  const parentStyle = parentElement ? window.getComputedStyle(parentElement) : null;
   const padding = {
     top: parseEdge(style.paddingTop),
     right: parseEdge(style.paddingRight),
@@ -71,6 +73,13 @@ export const getInspectMeasurement = (element: HTMLElement): InspectMeasurement 
     bottom: parseEdge(style.marginBottom),
     left: parseEdge(style.marginLeft),
   };
+  const rowGap = parentStyle ? parseEdge(parentStyle.rowGap) : 0;
+  const columnGap = parentStyle ? parseEdge(parentStyle.columnGap) : 0;
+  const parentDisplay = parentStyle?.display ?? '';
+  const hasGap =
+    !!parentElement &&
+    (parentDisplay.includes('flex') || parentDisplay.includes('grid')) &&
+    (rowGap > 0 || columnGap > 0);
 
   return {
     rect,
@@ -88,6 +97,12 @@ export const getInspectMeasurement = (element: HTMLElement): InspectMeasurement 
     },
     padding,
     margin,
+    gap: {
+      row: rowGap,
+      column: columnGap,
+      active: hasGap,
+    },
+    parentRect: hasGap && parentElement ? getRectFromDom(parentElement) : null,
     label: getElementLabel(element),
     styles: getTextInspection(element),
   };

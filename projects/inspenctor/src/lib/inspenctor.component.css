@@ -1,0 +1,307 @@
+:host {
+  --inspenctor-panel: rgba(27, 29, 36, 0.94);
+  --inspenctor-panel-edge: rgba(255, 255, 255, 0.08);
+  --inspenctor-text: #f3f4f6;
+  --inspenctor-muted: #9ca3af;
+  --inspenctor-blue: #4f8cff;
+  --inspenctor-orange: #f59e0b;
+  --inspenctor-green: #22c55e;
+  --inspenctor-violet: #a855f7;
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  font-family: "SF Pro Display", "Segoe UI", sans-serif;
+}
+
+.inspenctor-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.inspenctor-toolbar {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  pointer-events: auto;
+}
+
+.inspenctor-toolbar__rail,
+.inspenctor-toolbar__panel {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--inspenctor-panel-edge);
+  background: var(--inspenctor-panel);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(18px);
+}
+
+.inspenctor-icon-button,
+.inspenctor-segment {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--inspenctor-muted);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.inspenctor-icon-button {
+  width: 28px;
+}
+
+.inspenctor-icon-button svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.inspenctor-icon-button:hover,
+.inspenctor-segment:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--inspenctor-text);
+}
+
+.inspenctor-icon-button.is-active,
+.inspenctor-segment.is-active {
+  background: rgba(79, 140, 255, 0.18);
+  color: #dbeafe;
+}
+
+.inspenctor-icon-button--ghost.is-active {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--inspenctor-text);
+}
+
+.inspenctor-segment {
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.inspenctor-segment--danger:hover {
+  background: rgba(239, 68, 68, 0.16);
+  color: #fecaca;
+}
+
+.inspenctor-box {
+  position: fixed;
+  box-sizing: border-box;
+  pointer-events: none;
+  border: 1px solid var(--inspenctor-accent, var(--inspenctor-blue));
+  background: color-mix(in srgb, var(--inspenctor-accent, var(--inspenctor-blue)) 8%, transparent);
+}
+
+.inspenctor-box--hover {
+  opacity: 0.55;
+}
+
+.inspenctor-box--selected {
+  border-width: 1.5px;
+}
+
+.inspenctor-box--margin {
+  border-color: rgba(245, 158, 11, 0.82);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.inspenctor-box--padding {
+  border-color: rgba(34, 197, 94, 0.82);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.inspenctor-box--gap {
+  border-color: rgba(168, 85, 247, 0.72);
+  background: rgba(168, 85, 247, 0.04);
+}
+
+.inspenctor-box--distance {
+  border-style: dashed;
+  border-color: rgba(79, 140, 255, 0.7);
+  background: transparent;
+}
+
+.inspenctor-label,
+.inspenctor-box-tag,
+.inspenctor-text-chip,
+.inspenctor-distance-tag {
+  font-variant-numeric: tabular-nums;
+}
+
+.inspenctor-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translateY(calc(-100% - 8px));
+  max-width: min(420px, calc(100vw - 24px));
+  padding: 6px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--inspenctor-panel-edge);
+  background: var(--inspenctor-panel);
+  color: var(--inspenctor-text);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.26);
+  font-size: 11px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.inspenctor-box-tag {
+  position: fixed;
+  transform: translateY(-100%);
+  padding: 4px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--inspenctor-panel-edge);
+  background: rgba(17, 24, 39, 0.94);
+  color: var(--inspenctor-text);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+  font-size: 10px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.inspenctor-box-tag--margin {
+  color: #fbbf24;
+}
+
+.inspenctor-box-tag--padding {
+  color: #86efac;
+  transform: translateY(0);
+}
+
+.inspenctor-box-tag--gap {
+  color: #d8b4fe;
+}
+
+.inspenctor-text-chip {
+  position: fixed;
+  transform: translateY(-100%);
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--inspenctor-panel-edge);
+  background: rgba(17, 24, 39, 0.94);
+  color: #e5e7eb;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.inspenctor-text-chip__swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  flex: 0 0 auto;
+}
+
+.inspenctor-connector {
+  position: fixed;
+  border-color: rgba(79, 140, 255, 0.72);
+  border-style: dashed;
+  pointer-events: none;
+}
+
+.inspenctor-connector--vertical {
+  border-left-width: 1px;
+  width: 0;
+}
+
+.inspenctor-connector--horizontal {
+  border-top-width: 1px;
+  height: 0;
+}
+
+.inspenctor-distance-line {
+  position: fixed;
+  background: var(--inspenctor-blue);
+  pointer-events: none;
+}
+
+.inspenctor-distance-line--horizontal {
+  height: 1px;
+}
+
+.inspenctor-distance-line--vertical {
+  width: 1px;
+}
+
+.inspenctor-distance-tag {
+  position: fixed;
+  transform: translateX(-50%);
+  padding: 5px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--inspenctor-panel-edge);
+  background: rgba(17, 24, 39, 0.95);
+  color: var(--inspenctor-text);
+  font-size: 10px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.inspenctor-distance-tag--vertical {
+  transform: translateY(-50%);
+}
+
+.inspenctor-guide {
+  position: fixed;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.inspenctor-guide--vertical {
+  top: 0;
+  width: 14px;
+  height: 100vh;
+  transform: translateX(-50%);
+}
+
+.inspenctor-guide--horizontal {
+  left: 0;
+  width: 100vw;
+  height: 14px;
+  transform: translateY(-50%);
+}
+
+.inspenctor-guide-line {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.inspenctor-guide--vertical .inspenctor-guide-line {
+  left: calc(50% - 0.5px);
+  width: 1px;
+  height: 100%;
+  background: var(--inspenctor-guide, #ff7a00);
+}
+
+.inspenctor-guide--horizontal .inspenctor-guide-line {
+  top: calc(50% - 0.5px);
+  width: 100%;
+  height: 1px;
+  background: var(--inspenctor-guide, #ff7a00);
+}
+
+.inspenctor-guide--selected .inspenctor-guide-line {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
