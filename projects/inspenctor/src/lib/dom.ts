@@ -19,6 +19,28 @@ export const getElementLabel = (element: HTMLElement) => {
   return `${tag}${id}${className}`;
 };
 
+const toHex = (value: number) => value.toString(16).padStart(2, '0');
+
+const normalizeColorToHex = (color: string) => {
+  const trimmed = color.trim().toLowerCase();
+  if (trimmed.startsWith('#')) {
+    if (trimmed.length === 4) {
+      return `#${trimmed[1]}${trimmed[1]}${trimmed[2]}${trimmed[2]}${trimmed[3]}${trimmed[3]}`;
+    }
+    return trimmed;
+  }
+
+  const rgbMatch = trimmed.match(
+    /^rgba?\(\s*([0-9.]+)\s*,\s*([0-9.]+)\s*,\s*([0-9.]+)(?:\s*,\s*[0-9.]+\s*)?\)$/,
+  );
+  if (!rgbMatch) {
+    return color;
+  }
+
+  const [, r, g, b] = rgbMatch;
+  return `#${toHex(Math.round(Number(r)))}${toHex(Math.round(Number(g)))}${toHex(Math.round(Number(b)))}`;
+};
+
 export const getTextInspection = (element: HTMLElement): TextInspection => {
   const style = window.getComputedStyle(element);
   return {
@@ -27,7 +49,7 @@ export const getTextInspection = (element: HTMLElement): TextInspection => {
     fontWeight: style.fontWeight,
     lineHeight: style.lineHeight,
     letterSpacing: style.letterSpacing,
-    color: style.color,
+    color: normalizeColorToHex(style.color),
     textAlign: style.textAlign,
   };
 };
