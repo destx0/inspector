@@ -12,7 +12,17 @@
           <path d="M3 2l8 8-3 .7L6.7 13 6 10 3 2z" />
         </svg>
       </button>
-
+      <button
+        type="button"
+        class="inspector-icon-button"
+        [class.is-active]="showTypography()"
+        (click)="toggleTypography()"
+        title="Typography mode"
+      >
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 4V2h10v2h-4v10H7V4z" />
+        </svg>
+      </button>
       <div class="inspector-guide-group">
         <button
           type="button"
@@ -66,18 +76,6 @@
           </div>
         }
       </div>
-
-      <button
-        type="button"
-        class="inspector-icon-button"
-        [class.is-active]="showTypography()"
-        (click)="toggleTypography()"
-        title="Typography mode"
-      >
-        <svg viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M3 4V2h10v2h-4v10H7V4z" />
-        </svg>
-      </button>
     </div>
   </div>
 

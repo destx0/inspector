@@ -9,7 +9,7 @@
   --inspector-violet: #a855f7;
   position: fixed;
   inset: 0;
-  z-index: 2147483647;
+  z-index: 2147;
   pointer-events: none;
   font-family: "SF Pro Display", "Segoe UI", sans-serif;
 }
@@ -26,6 +26,7 @@
   right: 18px;
   display: block;
   pointer-events: auto;
+  z-index: 10000;
 }
 
 .inspector-toolbar__rail,
