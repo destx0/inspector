@@ -1,54 +1,86 @@
 <main class="docs-page">
-  <h1>inspenctor</h1>
-  <p class="tagline">On-screen inspection tools for Angular. Measure spacing, inspect typography, place guides.</p>
+  <header class="page-header">
+    <h1>inspenctor for Angular</h1>
+    <p class="tagline">
+      On-screen inspection tools for Angular. Measure spacing, inspect
+      typography, place guides.
+    </p>
+  </header>
 
-  <section>
-    <h2>Install</h2>
-    <pre class="code-block"><code>npm install inspenctor</code></pre>
-  </section>
+  <div class="content-grid">
+    <section class="card">
+      <h2>Installation</h2>
+      <div class="code-block">
+        <code>npm install inspenctor</code>
+      </div>
+    </section>
 
-  <section>
-    <h2>Usage</h2>
-    <pre class="code-block"><code>&lt;inspenctor-overlay
-  [persistOnReload]="true"
-  [hoverHighlightEnabled]="true"
-/&gt;</code></pre>
-  </section>
+    <section class="card">
+      <h2>Usage</h2>
+      <div class="code-block">
+        <code
+          >&lt;inspenctor-overlay [persistOnReload]="true"
+          [hoverHighlightEnabled]="true" /&gt;</code
+        >
+      </div>
+    </section>
+  </div>
 
-  <section>
-    <h2>Shortcuts</h2>
-    <div class="shortcut-list">
-      <div><strong>M</strong><span>Toggle inspector</span></div>
-      <div><strong>S</strong><span>Select mode</span></div>
-      <div><strong>G</strong><span>Guides mode</span></div>
-      <div><strong>H / V</strong><span>Guide orientation</span></div>
-      <div><strong>Alt</strong><span>Measure spacing</span></div>
-      <div><strong>Esc</strong><span>Clear</span></div>
+  <section class="shortcuts-section">
+    <h2>Keyboard Shortcuts</h2>
+    <div class="shortcuts-grid">
+      <div class="shortcut-item">
+        <kbd>M</kbd>
+        <span>Toggle inspector</span>
+      </div>
+      <div class="shortcut-item">
+        <kbd>S</kbd>
+        <span>Select mode</span>
+      </div>
+      <div class="shortcut-item">
+        <kbd>G</kbd>
+        <span>Guides mode</span>
+      </div>
+      <div class="shortcut-item">
+        <kbd>H / V</kbd>
+        <span>Guide orientation</span>
+      </div>
+      <div class="shortcut-item">
+        <kbd>Alt</kbd>
+        <span>Measure spacing</span>
+      </div>
+      <div class="shortcut-item">
+        <kbd>Esc</kbd>
+        <span>Clear state</span>
+      </div>
     </div>
   </section>
 
-  <section>
+  <section class="canvas-section">
     <h2>Test Canvas</h2>
     <div class="canvas">
-      <div class="canvas__row">
-        <div class="canvas__badge">Header</div>
-        <div class="canvas__badge canvas__badge--muted">Meta</div>
+      <div class="canvas-header">
+        <span class="badge badge--dark">Header</span>
+        <span class="badge badge--light">Meta</span>
       </div>
-      <div class="canvas__hero-card">
-        <p class="canvas__kicker">Product</p>
+      <div class="canvas-hero">
+        <span class="kicker">Product</span>
         <h3>Measure, inspect, and align UI without leaving the browser.</h3>
-        <p>Typography mode annotates visible text blocks. Selection mode shows font size, line height, hex color, padding, margin, and gap context.</p>
+        <p>
+          Typography mode annotates visible text blocks. Selection mode shows
+          font size, line height, hex color, padding, margin, and gap context.
+        </p>
       </div>
-      <div class="canvas__grid">
-        <div class="sample-card sample-card--blue">
+      <div class="canvas-grid">
+        <div class="feature-card feature-card--primary">
           <h4>Typography</h4>
           <p>Check font size, line height, and color labels.</p>
         </div>
-        <div class="sample-card sample-card--amber">
+        <div class="feature-card feature-card--secondary">
           <h4>Spacing</h4>
           <p>Hold Alt to measure gap to another section.</p>
         </div>
-        <div class="sample-card">
+        <div class="feature-card">
           <h4>Guides</h4>
           <p>Place persistent guides from toolbar.</p>
         </div>
