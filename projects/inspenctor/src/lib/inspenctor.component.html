@@ -1,18 +1,6 @@
 <div class="inspenctor-root" #overlayRoot>
-  <div class="inspenctor-toolbar" [class.is-open]="toolbarOpen()">
+  <div class="inspenctor-toolbar">
     <div class="inspenctor-toolbar__rail">
-      <button
-        type="button"
-        class="inspenctor-icon-button"
-        [class.is-active]="enabled()"
-        (click)="toggleEnabled()"
-        title="Toggle inspector"
-      >
-        <svg viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M3 3h10v10H3zM5 5h6v6H5z" />
-        </svg>
-      </button>
-
       <button
         type="button"
         class="inspenctor-icon-button"
@@ -25,17 +13,55 @@
         </svg>
       </button>
 
-      <button
-        type="button"
-        class="inspenctor-icon-button"
-        [class.is-active]="toolMode() === 'guides'"
-        (click)="setToolMode('guides')"
-        title="Guides mode"
-      >
-        <svg viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M4 2h1v12H4zM11 2h1v12h-1zM2 4h12v1H2zM2 11h12v1H2z" />
-        </svg>
-      </button>
+      <div class="inspenctor-guide-group">
+        <button
+          type="button"
+          class="inspenctor-icon-button"
+          [class.is-active]="toolMode() === 'guides'"
+          (click)="setToolMode('guides')"
+          title="Guides mode"
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M4 2h1v12H4zM11 2h1v12h-1zM2 4h12v1H2zM2 11h12v1H2z" />
+          </svg>
+        </button>
+
+        <button
+          type="button"
+          class="inspenctor-icon-button inspenctor-icon-button--ghost"
+          [class.is-active]="guideMenuOpen()"
+          (click)="toggleGuideMenu()"
+          title="Guide options"
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M4.47 6.97L8 10.5l3.53-3.53-.94-.94L8 8.62 5.41 6.03z" />
+          </svg>
+        </button>
+
+        @if (guideMenuOpen()) {
+          <div class="inspenctor-guide-menu">
+            <button
+              type="button"
+              class="inspenctor-segment"
+              [class.is-active]="guideOrientation() === 'vertical'"
+              (click)="setGuideOrientation('vertical')"
+            >
+              Vertical
+            </button>
+            <button
+              type="button"
+              class="inspenctor-segment"
+              [class.is-active]="guideOrientation() === 'horizontal'"
+              (click)="setGuideOrientation('horizontal')"
+            >
+              Horizontal
+            </button>
+            <button type="button" class="inspenctor-segment inspenctor-segment--danger" (click)="clearGuides()">
+              Clear
+            </button>
+          </div>
+        }
+      </div>
 
       <button
         type="button"
@@ -49,42 +75,7 @@
         </svg>
       </button>
 
-      <button
-        type="button"
-        class="inspenctor-icon-button inspenctor-icon-button--ghost"
-        [class.is-active]="toolbarOpen()"
-        (click)="toggleToolbarOpen()"
-        title="More tools"
-      >
-        <svg viewBox="0 0 16 16" aria-hidden="true">
-          <path d="M3 8a1.2 1.2 0 110-2.4A1.2 1.2 0 013 8zm5 0a1.2 1.2 0 110-2.4A1.2 1.2 0 018 8zm5 0A1.2 1.2 0 1113 5.6 1.2 1.2 0 0113 8z" />
-        </svg>
-      </button>
     </div>
-
-    @if (toolbarOpen()) {
-      <div class="inspenctor-toolbar__panel">
-        <button
-          type="button"
-          class="inspenctor-segment"
-          [class.is-active]="guideOrientation() === 'vertical'"
-          (click)="setGuideOrientation('vertical')"
-        >
-          Vertical
-        </button>
-        <button
-          type="button"
-          class="inspenctor-segment"
-          [class.is-active]="guideOrientation() === 'horizontal'"
-          (click)="setGuideOrientation('horizontal')"
-        >
-          Horizontal
-        </button>
-        <button type="button" class="inspenctor-segment inspenctor-segment--danger" (click)="clearGuides()">
-          Clear
-        </button>
-      </div>
-    }
   </div>
 
   @if (enabled() && toolMode() === 'select') {

@@ -68,7 +68,7 @@ export class InspenctorComponent {
   readonly altPressed = signal(false);
   readonly distanceOverlay = signal<DistanceOverlay | null>(null);
   readonly textBlocks = signal<TextBlockAnnotation[]>([]);
-  readonly toolbarOpen = signal(false);
+  readonly guideMenuOpen = signal(false);
 
   readonly selectedMetaLine = computed(() => {
     const selected = this.selectedMeasurement();
@@ -142,18 +142,6 @@ export class InspenctorComponent {
     this.refreshTypographyBlocks();
   }
 
-  toggleEnabled() {
-    this.enabled.update((value) => !value);
-    if (!this.enabled()) {
-      this.toolMode.set('none');
-      this.hoverRect.set(null);
-      this.selectedGuideId.set(null);
-      this.distanceOverlay.set(null);
-      this.textBlocks.set([]);
-    }
-    this.refreshTypographyBlocks();
-  }
-
   setToolMode(mode: ToolMode) {
     if (!this.enabled()) {
       this.enabled.set(true);
@@ -174,8 +162,8 @@ export class InspenctorComponent {
     this.refreshTypographyBlocks();
   }
 
-  toggleToolbarOpen() {
-    this.toolbarOpen.update((value) => !value);
+  toggleGuideMenu() {
+    this.guideMenuOpen.update((value) => !value);
   }
 
   clearGuides() {
@@ -210,7 +198,15 @@ export class InspenctorComponent {
 
     if (key === 'm') {
       event.preventDefault();
-      this.toggleEnabled();
+      this.enabled.update((value) => !value);
+      if (!this.enabled()) {
+        this.toolMode.set('none');
+        this.hoverRect.set(null);
+        this.selectedGuideId.set(null);
+        this.distanceOverlay.set(null);
+        this.textBlocks.set([]);
+      }
+      this.refreshTypographyBlocks();
       return;
     }
 

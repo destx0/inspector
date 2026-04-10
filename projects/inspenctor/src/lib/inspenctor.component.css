@@ -24,14 +24,12 @@
   position: fixed;
   top: 18px;
   right: 18px;
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
+  display: block;
   pointer-events: auto;
 }
 
 .inspenctor-toolbar__rail,
-.inspenctor-toolbar__panel {
+.inspenctor-guide-menu {
   display: flex;
   gap: 6px;
   padding: 6px;
@@ -40,6 +38,31 @@
   background: var(--inspenctor-panel);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
   backdrop-filter: blur(18px);
+}
+
+.inspenctor-toolbar__rail {
+  align-items: center;
+}
+
+.inspenctor-guide-group {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.inspenctor-guide-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: max-content;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.inspenctor-guide-menu .inspenctor-segment {
+  justify-content: flex-start;
+  width: 100%;
 }
 
 .inspenctor-icon-button,
