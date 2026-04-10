@@ -1,0 +1,41 @@
+<main class="page-shell">
+  <section class="hero">
+    <p class="eyebrow">Angular 17 Port</p>
+    <h1>inspenctor</h1>
+    <p class="lede">
+      Angular recreation of the original mesurer overlay. Use the live page below
+      to test selection and guides directly in the demo app.
+    </p>
+  </section>
+
+  <section class="panel-grid">
+    <article class="panel card-a">
+      <h2>Canvas</h2>
+      <p>Tap <strong>M</strong> to toggle the overlay. Use <strong>S</strong> for select mode, <strong>G</strong> for guides, <strong>TYPE</strong> to annotate every text block with font size, line height, and color, and hold <strong>Alt</strong> to inspect spacing between sections.</p>
+      <div class="sample sample-stack">
+        <div class="sample-chip">Header</div>
+        <div class="sample-box primary">Primary Card</div>
+        <div class="sample-row">
+          <div class="sample-box accent">A</div>
+          <div class="sample-box">B</div>
+          <div class="sample-box muted">C</div>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel card-b">
+      <h2>Spacing Targets</h2>
+      <p>These blocks are intentionally offset so the overlay has useful targets for page-wide typography labels, spacing checks, and guide placement.</p>
+      <div class="target-grid">
+        <div class="target tall">240 × 160</div>
+        <div class="target short">180 × 96</div>
+        <div class="target wide">320 × 72</div>
+      </div>
+    </article>
+  </section>
+</main>
+
+<inspenctor-overlay
+  [persistOnReload]="true"
+  [hoverHighlightEnabled]="true"
+></inspenctor-overlay>
