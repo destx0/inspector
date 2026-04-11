@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inspector Toolbar Variations</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        padding: 60px 40px;
+        background: #1e1e1e;
+        font-family:
+          "Segoe UI",
+          -apple-system,
+          sans-serif;
+        color: #cccccc;
+      }
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+      .container > h1 {
+        margin: 0 0 8px;
+        font-size: 24px;
+        font-weight: 600;
+        color: #e0e0e0;
+        letter-spacing: -0.3px;
+      }
+      .container > p {
+        margin: 0 0 32px;
+        font-size: 13px;
+        color: #888;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+        gap: 24px;
+      }
+      .variant {
+        background: #2d2d2d;
+        border-radius: 6px;
+        padding: 24px;
+        border: 1px solid #3a3a3a;
+      }
+      .variant h2 {
+        margin: 0 0 6px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #e0e0e0;
+        letter-spacing: 0.2px;
+      }
+      .variant p {
+        margin: 0 0 20px;
+        font-size: 12px;
+        color: #888;
+        line-height: 1.5;
+      }
+      .preview {
+        background: #1e1e1e;
+        border-radius: 4px;
+        padding: 24px;
+        min-height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #333;
+      }
+
+      /* Photoshop-like Semantic Colors */
+      :root {
+        --ps-bg: #2d2d2d;
+        --ps-surface: #3c3c3c;
+        --ps-border: #505050;
+        --ps-hover: #4a4a4a;
+        --ps-text: #a0a0a0;
+        --ps-text-active: #e0e0e0;
+        --ps-accent: #4ea1ff;
+        --ps-accent-bg: #4ea1ff22;
+        --ps-icon: #888;
+        --ps-icon-hover: #ccc;
+      }
+
+      /* ===== V1: Vertical Tool Panel ===== */
+      .v1-toolbar {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        padding: 2px;
+        background: var(--ps-surface);
+        border: 1px solid var(--ps-border);
+        min-width: 180px;
+      }
+      .v1-btn {
+        padding: 8px 12px;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: var(--ps-text);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        font-family: inherit;
+        text-align: left;
+        transition:
+          background 80ms ease,
+          color 80ms ease;
+      }
+      .v1-btn:hover {
+        background: var(--ps-hover);
+        color: var(--ps-text-active);
+      }
+      .v1-btn.active {
+        background: var(--ps-accent-bg);
+        color: var(--ps-accent);
+      }
+      .v1-btn svg {
+        flex-shrink: 0;
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+      }
+
+      /* ===== V2: Icon Row ===== */
+      .v2-toolbar {
+        display: flex;
+        gap: 2px;
+        padding: 4px;
+        background: var(--ps-surface);
+        border: 1px solid var(--ps-border);
+      }
+      .v2-btn {
+        width: 36px;
+        height: 36px;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: var(--ps-icon);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          background 80ms ease,
+          color 80ms ease;
+      }
+      .v2-btn:hover {
+        background: var(--ps-hover);
+        color: var(--ps-icon-hover);
+      }
+      .v2-btn.active {
+        background: var(--ps-accent-bg);
+        color: var(--ps-accent);
+      }
+      .v2-btn svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+      }
+
+      /* ===== V2b: Vertical Tool Strip ===== */
+      .v2b-toolbar {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 4px;
+        background: var(--ps-surface);
+        border: 1px solid var(--ps-border);
+      }
+      .v2b-btn {
+        width: 36px;
+        height: 36px;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: var(--ps-icon);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          background 80ms ease,
+          color 80ms ease;
+      }
+      .v2b-btn:hover {
+        background: var(--ps-hover);
+        color: var(--ps-icon-hover);
+      }
+      .v2b-btn.active {
+        background: var(--ps-accent-bg);
+        color: var(--ps-accent);
+      }
+      .v2b-btn svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+      }
+
+      /* ===== V2c: Tab Indicators ===== */
+      .v2c-toolbar {
+        display: flex;
+        gap: 0;
+        background: var(--ps-surface);
+        border: 1px solid var(--ps-border);
+      }
+      .v2c-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .v2c-btn {
+        width: 40px;
+        height: 32px;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: var(--ps-icon);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-bottom: 2px solid transparent;
+        transition:
+          background 80ms ease,
+          color 80ms ease;
+      }
+      .v2c-btn:hover {
+        background: var(--ps-hover);
+        color: var(--ps-icon-hover);
+      }
+      .v2c-btn.active {
+        color: var(--ps-accent);
+        border-bottom-color: var(--ps-accent);
+      }
+      .v2c-btn svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+      }
+
+      /* ===== V2d: Segmented Panel ===== */
+      .v2d-toolbar {
+        display: flex;
+        align-items: center;
+        background: var(--ps-surface);
+        border: 1px solid var(--ps-border);
+      }
+      .v2d-btn {
+        width: 38px;
+        height: 34px;
+        border: 0;
+        border-right: 1px solid var(--ps-border);
+        border-radius: 0;
+        background: transparent;
+        color: var(--ps-icon);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          background 80ms ease,
+          color 80ms ease;
+      }
+      .v2d-btn:last-child {
+        border-right: 0;
+      }
+      .v2d-btn:hover {
+        background: var(--ps-hover);
+        color: var(--ps-icon-hover);
+      }
+      .v2d-btn.active {
+        background: var(--ps-accent-bg);
+        color: var(--ps-accent);
+      }
+      .v2d-btn svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+      }
+
+      /* ===== V2g: Gradient Highlight ===== */
+      .v2g-toolbar {
+        display: flex;
+        gap: 2px;
+        padding: 4px;
+        background: var(--ps-surface);
+        border: 1px solid var(--ps-border);
+      }
+      .v2g-btn {
+        width: 38px;
+        height: 34px;
+        border: 1px solid transparent;
+        border-radius: 0;
+        background: transparent;
+        color: var(--ps-icon);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 100ms ease;
+      }
+      .v2g-btn:hover {
+        background: var(--ps-hover);
+        color: var(--ps-icon-hover);
+      }
+      .v2g-btn.active {
+        border-color: var(--ps-accent);
+        background: linear-gradient(180deg, var(--ps-accent-bg), transparent);
+        color: var(--ps-accent);
+      }
+      .v2g-btn svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+      }
+
+      /* ===== V2h: Inset Active ===== */
+      .v2h-toolbar {
+        display: flex;
+        gap: 2px;
+        padding: 4px;
+        background: #252525;
+        border: 1px solid var(--ps-border);
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+      }
+      .v2h-btn {
+        width: 36px;
+        height: 34px;
+        border: 1px solid transparent;
+        border-radius: 0;
+        background: transparent;
+        color: var(--ps-icon);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 100ms ease;
+      }
+      .v2h-btn:hover {
+        background: var(--ps-hover);
+        color: var(--ps-icon-hover);
+      }
+      .v2h-btn.active {
+        background: var(--ps-surface);
+        border-color: #555;
+        box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
+        color: var(--ps-accent);
+      }
+      .v2h-btn svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+      }
+
+      /* ===== V2i: Bottom Line ===== */
+      .v2i-toolbar {
+        display: flex;
+        background: var(--ps-surface);
+        border: 1px solid var(--ps-border);
+      }
+      .v2i-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .v2i-btn {
+        width: 42px;
+        height: 30px;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: var(--ps-icon);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          background 80ms ease,
+          color 80ms ease;
+      }
+      .v2i-btn:hover {
+        background: var(--ps-hover);
+        color: var(--ps-icon-hover);
+      }
+      .v2i-btn.active {
+        color: var(--ps-accent);
+      }
+      .v2i-btn svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+      }
+      .v2i-line {
+        width: 100%;
+        height: 2px;
+        background: transparent;
+        transition: background 100ms ease;
+      }
+      .v2i-item:has(.v2i-btn.active) .v2i-line {
+        background: var(--ps-accent);
+      }
+
+      /* ===== V2f: Compact Strip ===== */
+      .v2f-toolbar {
+        display: flex;
+        gap: 1px;
+        background: var(--ps-surface);
+        border: 1px solid var(--ps-border);
+      }
+      .v2f-btn {
+        width: 28px;
+        height: 28px;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+        color: var(--ps-icon);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          background 80ms ease,
+          color 80ms ease;
+      }
+      .v2f-btn:hover {
+        background: var(--ps-hover);
+        color: var(--ps-icon-hover);
+      }
+      .v2f-btn.active {
+        background: var(--ps-accent-bg);
+        color: var(--ps-accent);
+      }
+      .v2f-btn svg {
+        width: 14px;
+        height: 14px;
+        fill: currentColor;
+      }
+
+      /* ===== V6: Flat Tabs ===== */
+      .v6-toolbar {
+        display: flex;
+        background: var(--ps-surface);
+        border: 1px solid var(--ps-border);
+      }
+      .v6-btn {
+        padding: 8px 16px;
+        border: 0;
+        border-right: 1px solid var(--ps-border);
+        border-radius: 0;
+        background: transparent;
+        color: var(--ps-text);
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 500;
+        font-family: inherit;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition:
+          background 80ms ease,
+          color 80ms ease;
+      }
+      .v6-btn:last-child {
+        border-right: 0;
+      }
+      .v6-btn:hover {
+        background: var(--ps-hover);
+        color: var(--ps-text-active);
+      }
+      .v6-btn.active {
+        background: #2a2a2a;
+        color: var(--ps-accent);
+      }
+      .v6-btn svg {
+        width: 14px;
+        height: 14px;
+        fill: currentColor;
+      }
+
+      /* ===== V7: Options Bar ===== */
+      .v7-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 6px 16px;
+        background: var(--ps-surface);
+        border: 1px solid var(--ps-border);
+      }
+      .v7-btn {
+        width: 28px;
+        height: 28px;
+        border: 1px solid transparent;
+        border-radius: 0;
+        background: transparent;
+        color: var(--ps-icon);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 80ms ease;
+      }
+      .v7-btn:hover {
+        background: var(--ps-hover);
+        color: var(--ps-icon-hover);
+      }
+      .v7-btn.active {
+        border-color: var(--ps-accent);
+        background: var(--ps-accent-bg);
+        color: var(--ps-accent);
+      }
+      .v7-btn svg {
+        width: 14px;
+        height: 14px;
+        fill: currentColor;
+      }
+      .v7-sep {
+        width: 1px;
+        height: 20px;
+        background: var(--ps-border);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Inspector Toolbar Variations</h1>
+      <p>
+        11 Photoshop-inspired toolbar designs — dark theme, sharp edges, subtle
+        borders
+      </p>
+
+      <div class="grid">
+        <!-- V1: Vertical Tool Panel -->
+        <div class="variant">
+          <h2>V1: Vertical Tool Panel</h2>
+          <p>Stacked tool list with active highlight. Classic panel design.</p>
+          <div class="preview">
+            <div class="v1-toolbar">
+              <button class="v1-btn active">
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 2l8 8-3 .7L6.7 13 6 10 3 2z" />
+                </svg>
+                Select
+              </button>
+              <button class="v1-btn">
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 4V2h10v2h-4v10H7V4z" />
+                </svg>
+                Type
+              </button>
+              <button class="v1-btn">
+                <svg viewBox="0 0 16 16">
+                  <path
+                    d="M4 2h1v12H4zM11 2h1v12h-1zM2 4h12v1H2zM2 11h12v1H2z"
+                  />
+                </svg>
+                Guides
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- V2: Icon Row -->
+        <div class="variant">
+          <h2>V2: Icon Row</h2>
+          <p>Horizontal icon strip, zero border-radius. Direct, no-nonsense.</p>
+          <div class="preview">
+            <div class="v2-toolbar">
+              <button class="v2-btn active">
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 2l8 8-3 .7L6.7 13 6 10 3 2z" />
+                </svg>
+              </button>
+              <button class="v2-btn">
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 4V2h10v2h-4v10H7V4z" />
+                </svg>
+              </button>
+              <button class="v2-btn">
+                <svg viewBox="0 0 16 16">
+                  <path
+                    d="M4 2h1v12H4zM11 2h1v12h-1zM2 4h12v1H2zM2 11h12v1H2z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- V2b: Vertical Tool Strip -->
+        <div class="variant">
+          <h2>V2b: Vertical Tool Strip</h2>
+          <p>Vertical icon column. Like the Photoshop toolbox.</p>
+          <div class="preview">
+            <div class="v2b-toolbar">
+              <button class="v2b-btn active">
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 2l8 8-3 .7L6.7 13 6 10 3 2z" />
+                </svg>
+              </button>
+              <button class="v2b-btn">
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 4V2h10v2h-4v10H7V4z" />
+                </svg>
+              </button>
+              <button class="v2b-btn">
+                <svg viewBox="0 0 16 16">
+                  <path
+                    d="M4 2h1v12H4zM11 2h1v12h-1zM2 4h12v1H2zM2 11h12v1H2z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- V2c: Tab Indicators -->
+        <div class="variant">
+          <h2>V2c: Tab Indicators</h2>
+          <p>Tab-style bottom border on active. Like document tabs.</p>
+          <div class="preview">
+            <div class="v2c-toolbar">
+              <div class="v2c-item">
+                <button class="v2c-btn active">
+                  <svg viewBox="0 0 16 16">
+                    <path d="M3 2l8 8-3 .7L6.7 13 6 10 3 2z" />
+                  </svg>
+                </button>
+              </div>
+              <div class="v2c-item">
+                <button class="v2c-btn">
+                  <svg viewBox="0 0 16 16">
+                    <path d="M3 4V2h10v2h-4v10H7V4z" />
+                  </svg>
+                </button>
+              </div>
+              <div class="v2c-item">
+                <button class="v2c-btn">
+                  <svg viewBox="0 0 16 16">
+                    <path
+                      d="M4 2h1v12H4zM11 2h1v12h-1zM2 4h12v1H2zM2 11h12v1H2z"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- V2d: Segmented Panel -->
+        <div class="variant">
+          <h2>V2d: Segmented Panel</h2>
+          <p>Dividers between items. Like the options bar separator lines.</p>
+          <div class="preview">
+            <div class="v2d-toolbar">
+              <button class="v2d-btn active">
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 2l8 8-3 .7L6.7 13 6 10 3 2z" />
+                </svg>
+              </button>
+              <button class="v2d-btn">
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 4V2h10v2h-4v10H7V4z" />
+                </svg>
+              </button>
+              <button class="v2d-btn">
+                <svg viewBox="0 0 16 16">
+                  <path
+                    d="M4 2h1v12H4zM11 2h1v12h-1zM2 4h12v1H2zM2 11h12v1H2z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- V2g: Gradient Highlight -->
+        <div class="variant">
+          <h2>V2g: Gradient Highlight</h2>
+          <p>Subtle gradient wash on active. Refined, modern CC aesthetic.</p>
+          <div class="preview">
+            <div class="v2g-toolbar">
+              <button class="v2g-btn active">
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 2l8 8-3 .7L6.7 13 6 10 3 2z" />
+                </svg>
+              </button>
+              <button class="v2g-btn">
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 4V2h10v2h-4v10H7V4z" />
+                </svg>
+              </button>
+              <button class="v2g-btn">
+                <svg viewBox="0 0 16 16">
+                  <path
+                    d="M4 2h1v12H4zM11 2h1v12h-1zM2 4h12v1H2zM2 11h12v1H2z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- V2h: Inset Active -->
+        <div class="variant">
+          <h2>V2h: Inset Active</h2>
+          <p>Pressed-in effect for active state. Classic Adobe UI pattern.</p>
+          <div class="preview">
+            <div class="v2h-toolbar">
+              <button class="v2h-btn active">
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 2l8 8-3 .7L6.7 13 6 10 3 2z" />
+                </svg>
+              </button>
+              <button class="v2h-btn">
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 4V2h10v2h-4v10H7V4z" />
+                </svg>
+              </button>
+              <button class="v2h-btn">
+                <svg viewBox="0 0 16 16">
+                  <path
+                    d="M4 2h1v12H4zM11 2h1v12h-1zM2 4h12v1H2zM2 11h12v1H2z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- V2i: Bottom Line -->
+        <div class="variant">
+          <h2>V2i: Bottom Line</h2>
+          <p>Thin accent line under active. Clean, tab-bar inspired.</p>
+          <div class="preview">
+            <div class="v2i-toolbar">
+              <div class="v2i-item">
+                <button class="v2i-btn active">
+                  <svg viewBox="0 0 16 16">
+                    <path d="M3 2l8 8-3 .7L6.7 13 6 10 3 2z" />
+                  </svg>
+                </button>
+                <span class="v2i-line"></span>
+              </div>
+              <div class="v2i-item">
+                <button class="v2i-btn">
+                  <svg viewBox="0 0 16 16">
+                    <path d="M3 4V2h10v2h-4v10H7V4z" />
+                  </svg>
+                </button>
+                <span class="v2i-line"></span>
+              </div>
+              <div class="v2i-item">
+                <button class="v2i-btn">
+                  <svg viewBox="0 0 16 16">
+                    <path
+                      d="M4 2h1v12H4zM11 2h1v12h-1zM2 4h12v1H2zM2 11h12v1H2z"
+                    />
+                  </svg>
+                </button>
+                <span class="v2i-line"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- V2f: Compact Strip -->
+        <div class="variant">
+          <h2>V2f: Compact Strip</h2>
+          <p>Tight spacing, small icons. Maximum density, minimal footprint.</p>
+          <div class="preview">
+            <div class="v2f-toolbar">
+              <button class="v2f-btn active">
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 2l8 8-3 .7L6.7 13 6 10 3 2z" />
+                </svg>
+              </button>
+              <button class="v2f-btn">
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 4V2h10v2h-4v10H7V4z" />
+                </svg>
+              </button>
+              <button class="v2f-btn">
+                <svg viewBox="0 0 16 16">
+                  <path
+                    d="M4 2h1v12H4zM11 2h1v12h-1zM2 4h12v1H2zM2 11h12v1H2z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- V6: Flat Tabs -->
+        <div class="variant">
+          <h2>V6: Flat Tabs</h2>
+          <p>Tab bar with dividers. Like panel tabs in Photoshop.</p>
+          <div class="preview">
+            <div class="v6-toolbar">
+              <button class="v6-btn active">
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 2l8 8-3 .7L6.7 13 6 10 3 2z" />
+                </svg>
+                Select
+              </button>
+              <button class="v6-btn">
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 4V2h10v2h-4v10H7V4z" />
+                </svg>
+                Type
+              </button>
+              <button class="v6-btn">
+                <svg viewBox="0 0 16 16">
+                  <path
+                    d="M4 2h1v12H4zM11 2h1v12h-1zM2 4h12v1H2zM2 11h12v1H2z"
+                  />
+                </svg>
+                Guides
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- V7: Options Bar -->
+        <div class="variant">
+          <h2>V7: Options Bar</h2>
+          <p>Options bar style with separators. Like the top toolbar in PS.</p>
+          <div class="preview">
+            <div class="v7-toolbar">
+              <button class="v7-btn active">
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 2l8 8-3 .7L6.7 13 6 10 3 2z" />
+                </svg>
+              </button>
+              <div class="v7-sep"></div>
+              <button class="v7-btn">
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 4V2h10v2h-4v10H7V4z" />
+                </svg>
+              </button>
+              <div class="v7-sep"></div>
+              <button class="v7-btn">
+                <svg viewBox="0 0 16 16">
+                  <path
+                    d="M4 2h1v12H4zM11 2h1v12h-1zM2 4h12v1H2zM2 11h12v1H2z"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

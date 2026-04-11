@@ -26,7 +26,7 @@
       <div class="inspector-guide-group">
         <button
           type="button"
-          class="inspector-icon-button"
+          class="inspector-icon-button inspector-icon-button--guide-main"
           [class.is-active]="toolMode() === 'guides'"
           (click)="setToolMode('guides')"
           title="Guides mode"
@@ -38,7 +38,7 @@
 
         <button
           type="button"
-          class="inspector-icon-button inspector-icon-button--ghost"
+          class="inspector-icon-button inspector-icon-button--ghost inspector-icon-button--guide-menu"
           [class.is-active]="guideMenuOpen()"
           (click)="toggleGuideMenu()"
           title="Guide options"
@@ -245,6 +245,27 @@
   }
 
   @if (enabled()) {
+    @if (toolMode() === "guides") {
+      @if (guidePreview(); as preview) {
+        <div
+          class="inspector-guide inspector-guide--preview"
+          [class.inspector-guide--vertical]="preview.orientation === 'vertical'"
+          [class.inspector-guide--horizontal]="
+            preview.orientation === 'horizontal'
+          "
+          [style.left.px]="
+            preview.orientation === 'vertical' ? preview.position : null
+          "
+          [style.top.px]="
+            preview.orientation === 'horizontal' ? preview.position : null
+          "
+          [style.--inspector-guide]="guideColor"
+        >
+          <span class="inspector-guide-line"></span>
+        </div>
+      }
+    }
+
     @for (guide of guides(); track guide.id) {
       <button
         type="button"

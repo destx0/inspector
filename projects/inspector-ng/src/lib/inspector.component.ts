@@ -69,6 +69,7 @@ export class inspectorComponent {
   readonly distanceOverlay = signal<DistanceOverlay | null>(null);
   readonly textBlocks = signal<TextBlockAnnotation[]>([]);
   readonly guideMenuOpen = signal(false);
+  readonly guidePreview = signal<Guide | null>(null);
 
   readonly selectedMetaLine = computed(() => {
     const selected = this.selectedMeasurement();
@@ -154,12 +155,14 @@ export class inspectorComponent {
 
     this.toolMode.set(this.toolMode() === mode ? "none" : mode);
     this.hoverRect.set(null);
+    this.guidePreview.set(null);
     this.distanceOverlay.set(null);
     this.refreshTypographyBlocks();
   }
 
   setGuideOrientation(orientation: GuideOrientation) {
     this.guideOrientation.set(orientation);
+    this.guidePreview.set(null);
   }
 
   toggleTypography() {
@@ -212,6 +215,7 @@ export class inspectorComponent {
         this.selectedGuideId.set(null);
         this.distanceOverlay.set(null);
         this.textBlocks.set([]);
+        this.guidePreview.set(null);
       }
       this.refreshTypographyBlocks();
       return;
@@ -265,6 +269,7 @@ export class inspectorComponent {
       this.distanceOverlay.set(null);
       this.selectedElement = null;
       this.hoverElement = null;
+      this.guidePreview.set(null);
       this.clearGuides();
       this.refreshTypographyBlocks();
       return;
@@ -296,6 +301,7 @@ export class inspectorComponent {
     }
 
     if (this.draggingGuideId) {
+      this.guidePreview.set(null);
       const viewport = getViewportSize();
       this.guides.set(
         this.guides().map((guide) => {
@@ -311,6 +317,25 @@ export class inspectorComponent {
       );
       return;
     }
+
+    if (this.toolMode() === "guides") {
+      this.hoverRect.set(null);
+      this.hoverElement = null;
+      this.distanceOverlay.set(null);
+
+      if (
+        this.overlayRoot()?.nativeElement.contains(event.target as Node) ??
+        false
+      ) {
+        this.guidePreview.set(null);
+        return;
+      }
+
+      this.guidePreview.set(this.getGuidePreview(event));
+      return;
+    }
+
+    this.guidePreview.set(null);
 
     if (this.toolMode() !== "select" || !this.hoverHighlightEnabled) {
       this.hoverRect.set(null);
@@ -361,14 +386,9 @@ export class inspectorComponent {
       if (overlay && overlay.contains(event.target as Node)) {
         return;
       }
-      this.addGuide({
-        id: createId(),
-        orientation: this.guideOrientation(),
-        position:
-          this.guideOrientation() === "vertical"
-            ? this.snapGuide(event.clientX)
-            : this.snapGuide(event.clientY),
-      });
+      const guide = this.getGuidePreview(event);
+      this.addGuide({ ...guide, id: createId() });
+      this.guidePreview.set(guide);
       return;
     }
 
@@ -459,6 +479,20 @@ export class inspectorComponent {
     this.guides.set(nextGuides);
     this.selectedGuideId.set(guide.id);
     this.recordHistory(nextGuides);
+  }
+
+  private getGuidePreview(event: PointerEvent | MouseEvent): Guide {
+    const viewport = getViewportSize();
+    const orientation = this.guideOrientation();
+    const rawPosition =
+      orientation === "vertical" ? event.clientX : event.clientY;
+    const max = orientation === "vertical" ? viewport.width : viewport.height;
+
+    return {
+      id: "preview",
+      orientation,
+      position: this.snapGuide(clamp(rawPosition, 0, max)),
+    };
   }
 
   private snapGuide(position: number) {
