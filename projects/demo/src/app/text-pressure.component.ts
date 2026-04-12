@@ -23,12 +23,11 @@ import { CommonModule } from '@angular/common';
       overflow: hidden;
     }
     .title {
-      text-transform: uppercase;
       margin: 0;
       text-align: left;
       user-select: none;
       white-space: nowrap;
-      font-weight: 100;
+      font-weight: 300;
       width: 100%;
       line-height: 1;
     }
