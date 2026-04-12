@@ -6,7 +6,7 @@ On-screen inspection tools for Angular. Measure spacing, inspect typography, pla
 
 This project is inspired by [mesurer](https://github.com/ibelick/mesurer) by [ibelick](https://github.com/ibelick) — a lightweight measurement and alignment overlay for React apps. **inspector-ng** brings the same concept to the Angular ecosystem, reimagined with Angular's standalone components, signal-based reactivity, and `OnPush` change detection.
 
-Full credit to [ibelick](https://github.com/ibelick) for the original idea and design.
+Credit to [ibelick](https://github.com/ibelick) for the original idea and design.
 
 ## Installation
 
