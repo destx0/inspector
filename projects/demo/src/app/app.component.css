@@ -97,10 +97,17 @@ p {
 }
 
 .header-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--space-xl);
+  margin-bottom: var(--space-lg);
+}
+
+.header-title-wrapper {
+  max-width: 640px;
+}
+
+.header-title-wrapper text-pressure {
+  display: block;
+  height: 140px;
+  margin-bottom: var(--space-xs);
 }
 
 .tagline {

@@ -1,10 +1,11 @@
 import { Component, signal } from "@angular/core";
 import { inspectorComponent } from "inspector-ng";
+import { TextPressureComponent } from "./text-pressure.component";
 
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [inspectorComponent],
+  imports: [inspectorComponent, TextPressureComponent],
   templateUrl: "./app.component.html",
   styleUrl: "./app.component.css",
 })
