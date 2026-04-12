@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(mv *)",
-      "WebSearch"
+      "WebSearch",
+      "Read(//home/omu/Downloads/favicon_io (1)/**)",
+      "Bash(cp *)"
     ]
   },
   "$version": 3
