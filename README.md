@@ -1,6 +1,6 @@
 # inspector-ng
 
-On-screen inspection tools for Angular. Measure spacing, inspect typography, place guides — without leaving the browser.
+Measure, inspect, and align Angular UIs on localhost.
 
 ## Inspiration
 

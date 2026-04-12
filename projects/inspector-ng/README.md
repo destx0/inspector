@@ -1,12 +1,13 @@
 # inspector-ng
 
-On-screen inspection tools for Angular. Measure spacing, inspect typography, place guides — without leaving the browser.
+Measure, inspect, and align Angular UIs on localhost.
 
 ## Inspiration
 
 This project is inspired by [mesurer](https://github.com/ibelick/mesurer) by [ibelick](https://github.com/ibelick) — a lightweight measurement and alignment overlay for React apps. **inspector-ng** brings the same concept to the Angular ecosystem, reimagined with Angular's standalone components, signal-based reactivity, and `OnPush` change detection.
 
 Inspired by [ibelick](https://github.com/ibelick)'s original design.
+
 ## Installation
 
 ```bash
