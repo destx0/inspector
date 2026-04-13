@@ -408,6 +408,25 @@ export class inspectorComponent {
       return;
     }
 
+    // Ctrl+click: select the minimum common parent of current selection and clicked element
+    if ((event.ctrlKey || event.metaKey) && this.selectedElement) {
+      const commonParent = this.findMinimumCommonParent(
+        this.selectedElement,
+        target,
+      );
+      if (
+        commonParent &&
+        commonParent !== document.body &&
+        commonParent !== document.documentElement
+      ) {
+        this.selectedMeasurement.set(getInspectMeasurement(commonParent));
+        this.selectedElement = commonParent;
+        this.updateDistanceOverlay();
+        this.refreshTypographyBlocks();
+        return;
+      }
+    }
+
     this.selectedMeasurement.set(getInspectMeasurement(target));
     this.selectedElement = target;
     this.selectedGuideId.set(
@@ -550,5 +569,29 @@ export class inspectorComponent {
 
   private cloneGuides(guides: Guide[]) {
     return guides.map((guide) => ({ ...guide }));
+  }
+
+  private findMinimumCommonParent(
+    elementA: HTMLElement,
+    elementB: HTMLElement,
+  ): HTMLElement | null {
+    // Build ancestor chain for element A
+    const ancestorsA = new Set<Element>();
+    let current: Element | null = elementA;
+    while (current) {
+      ancestorsA.add(current);
+      current = current.parentElement;
+    }
+
+    // Walk up from elementB until we find a common ancestor
+    current = elementB;
+    while (current) {
+      if (ancestorsA.has(current)) {
+        return current as HTMLElement;
+      }
+      current = current.parentElement;
+    }
+
+    return null;
   }
 }
