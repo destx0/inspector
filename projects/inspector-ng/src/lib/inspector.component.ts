@@ -76,7 +76,7 @@ export class inspectorComponent {
     if (!selected) {
       return '';
     }
-    return `${selected.label} · ${selected.styles.fontSize} / ${selected.styles.lineHeight} / ${selected.styles.color}`;
+    return `${selected.label} · ${formatValue(selected.rect.width)} x ${formatValue(selected.rect.height)} · ${selected.styles.fontSize} / ${selected.styles.lineHeight} / ${selected.styles.color}`;
   });
 
   private readonly isBrowser: boolean;
