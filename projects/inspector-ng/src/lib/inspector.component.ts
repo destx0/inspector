@@ -5,6 +5,7 @@ import {
   HostListener,
   Inject,
   Input,
+  OnDestroy,
   PLATFORM_ID,
   computed,
   effect,
@@ -46,7 +47,7 @@ import { createId, formatValue } from './utils';
   styleUrl: './inspector.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class inspectorComponent {
+export class inspectorComponent implements OnDestroy {
   readonly Math = Math;
   readonly formatValue = formatValue;
   readonly guideHitboxSize = GUIDE_HITBOX_SIZE;
@@ -83,6 +84,19 @@ export class inspectorComponent {
   private readonly hydrated = signal(false);
   private readonly history = signal<Guide[][]>([]);
   private readonly historyIndex = signal(-1);
+  private readonly handleCapturedClick = (event: MouseEvent) => {
+    if (
+      !event.shiftKey ||
+      !this.canInspectClick(event) ||
+      !this.selectElementAtPoint(event)
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+  };
   private draggingGuideId: string | null = null;
   private selectedElement: HTMLElement | null = null;
   private hoverElement: HTMLElement | null = null;
@@ -119,7 +133,16 @@ export class inspectorComponent {
   }
 
   ngOnInit() {
-    if (!this.isBrowser || !this.persistOnReload) {
+    if (!this.isBrowser) {
+      this.hydrated.set(true);
+      return;
+    }
+
+    window.addEventListener('click', this.handleCapturedClick, {
+      capture: true,
+    });
+
+    if (!this.persistOnReload) {
       this.hydrated.set(true);
       return;
     }
@@ -146,6 +169,16 @@ export class inspectorComponent {
 
     this.hydrated.set(true);
     this.refreshTypographyBlocks();
+  }
+
+  ngOnDestroy() {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    window.removeEventListener('click', this.handleCapturedClick, {
+      capture: true,
+    });
   }
 
   setToolMode(mode: ToolMode) {
@@ -392,10 +425,34 @@ export class inspectorComponent {
       return;
     }
 
-    if (this.toolMode() !== 'select') {
+    if (!this.canInspectClick(event)) {
       return;
     }
 
+    this.selectElementAtPoint(event);
+  }
+
+  @HostListener('window:resize')
+  @HostListener('window:scroll')
+  handleViewportChange() {
+    if (this.selectedElement && document.contains(this.selectedElement)) {
+      this.selectedMeasurement.set(getInspectMeasurement(this.selectedElement));
+    }
+    this.updateDistanceOverlay();
+    this.refreshTypographyBlocks();
+  }
+
+  private canInspectClick(event: MouseEvent) {
+    if (!this.enabled() || !this.isBrowser || this.toolMode() !== 'select') {
+      return false;
+    }
+
+    const overlay = this.overlayRoot()?.nativeElement ?? null;
+    return !(overlay && overlay.contains(event.target as Node));
+  }
+
+  private selectElementAtPoint(event: MouseEvent) {
+    const overlay = this.overlayRoot()?.nativeElement ?? null;
     const target = getTargetElement(
       { x: event.clientX, y: event.clientY },
       overlay,
@@ -405,7 +462,7 @@ export class inspectorComponent {
       this.selectedElement = null;
       this.distanceOverlay.set(null);
       this.refreshTypographyBlocks();
-      return;
+      return false;
     }
 
     // Ctrl+click: select the minimum common parent of current selection and clicked element
@@ -423,7 +480,7 @@ export class inspectorComponent {
         this.selectedElement = commonParent;
         this.updateDistanceOverlay();
         this.refreshTypographyBlocks();
-        return;
+        return true;
       }
     }
 
@@ -434,16 +491,7 @@ export class inspectorComponent {
     );
     this.updateDistanceOverlay();
     this.refreshTypographyBlocks();
-  }
-
-  @HostListener('window:resize')
-  @HostListener('window:scroll')
-  handleViewportChange() {
-    if (this.selectedElement && document.contains(this.selectedElement)) {
-      this.selectedMeasurement.set(getInspectMeasurement(this.selectedElement));
-    }
-    this.updateDistanceOverlay();
-    this.refreshTypographyBlocks();
+    return true;
   }
 
   private updateDistanceOverlay() {
