@@ -89,7 +89,7 @@ export class InspectorCheckpointRegistry {
       const checkpoint: InspectorCheckpoint = {
         version: 1,
         id: this.createId(),
-        name: name?.trim() || this.defaultName(createdAt),
+        name: name?.trim() || this.nextAutomaticName(this.routePath(this.router.url)),
         url: this.router.url,
         createdAt,
         scopes: this.getScopes(Object.keys(state)),
@@ -174,7 +174,15 @@ export class InspectorCheckpointRegistry {
       if (!raw) return;
       const parsed = JSON.parse(raw) as unknown;
       if (!Array.isArray(parsed)) return;
-      this.checkpoints.set(parsed.filter(this.isCheckpoint).sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
+      const checkpoints = parsed.filter(this.isCheckpoint);
+      const normalized = this.normalizeLegacyNames(checkpoints);
+      const sorted = normalized.checkpoints.sort((a, b) =>
+        b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id)
+      );
+      this.checkpoints.set(sorted);
+      if (normalized.changed) {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sorted));
+      }
     } catch {
       this.warning.set('Saved checkpoints could not be read and were ignored.');
     }
@@ -212,9 +220,60 @@ export class InspectorCheckpointRegistry {
     return [...new Set(adapterIds.map((id) => id.split(':', 1)[0]))];
   }
 
-  private defaultName(createdAt: string): string {
-    const route = this.router.url.split('?')[0].split('#')[0] || '/';
-    return `${route} · ${new Date(createdAt).toLocaleString()}`;
+  private routePath(url: string): string {
+    return url.split(/[?#]/, 1)[0] || '/';
+  }
+
+  private nextAutomaticName(route: string, usedNames = new Set(this.checkpoints().map(({ name }) => name))): string {
+    if (!usedNames.has(route)) return route;
+    for (let suffix = 2; ; suffix += 1) {
+      const candidate = `${route} ${suffix}`;
+      if (!usedNames.has(candidate)) return candidate;
+    }
+  }
+
+  private normalizeLegacyNames(checkpoints: InspectorCheckpoint[]): {
+    checkpoints: InspectorCheckpoint[];
+    changed: boolean;
+  } {
+    const legacyIds = new Set(
+      checkpoints.filter((checkpoint) => this.isLegacyAutomaticName(checkpoint)).map(({ id }) => id),
+    );
+    if (!legacyIds.size) return { checkpoints, changed: false };
+
+    const usedNames = new Set(
+      checkpoints.filter(({ id }) => !legacyIds.has(id)).map(({ name }) => name),
+    );
+    const names = new Map<string, string>();
+    const oldestFirst = checkpoints
+      .filter(({ id }) => legacyIds.has(id))
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
+
+    for (const checkpoint of oldestFirst) {
+      const name = this.nextAutomaticName(this.routePath(checkpoint.url), usedNames);
+      names.set(checkpoint.id, name);
+      usedNames.add(name);
+    }
+
+    return {
+      checkpoints: checkpoints.map((checkpoint) =>
+        names.has(checkpoint.id) ? { ...checkpoint, name: names.get(checkpoint.id)! } : checkpoint
+      ),
+      changed: true,
+    };
+  }
+
+  private isLegacyAutomaticName(checkpoint: InspectorCheckpoint): boolean {
+    const route = this.routePath(checkpoint.url);
+    const prefix = `${route} · `;
+    if (!checkpoint.name.startsWith(prefix)) return false;
+    const timestamp = checkpoint.name.slice(prefix.length);
+    if (timestamp === new Date(checkpoint.createdAt).toLocaleString()) return true;
+
+    const parsedTimestamp = Date.parse(timestamp);
+    const createdTimestamp = Date.parse(checkpoint.createdAt);
+    return Number.isFinite(parsedTimestamp) && Number.isFinite(createdTimestamp) &&
+      Math.abs(parsedTimestamp - createdTimestamp) < 1000;
   }
 
   private createId(): string {

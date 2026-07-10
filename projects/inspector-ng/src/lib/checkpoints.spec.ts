@@ -17,6 +17,79 @@ describe('InspectorCheckpointRegistry', () => {
     registry = new InspectorCheckpointRegistry('browser' as unknown as object, router);
   });
 
+  function registryFor(url: string): InspectorCheckpointRegistry {
+    const routeRouter = jasmine.createSpyObj<Router>('Router', ['navigateByUrl'], { url });
+    routeRouter.navigateByUrl.and.resolveTo(true);
+    return new InspectorCheckpointRegistry('browser' as unknown as object, routeRouter);
+  }
+
+  it('uses the route path without its query as the automatic name', async () => {
+    expect((await registry.save())?.name).toBe('/summary');
+  });
+
+  it('allocates sequential automatic names for repeated saves', async () => {
+    await registry.save();
+    await registry.save();
+    await registry.save();
+
+    expect(registry.checkpoints().map(({ name }) => name)).toEqual([
+      '/summary 3', '/summary 2', '/summary',
+    ]);
+  });
+
+  it('fills the next available numeric name without colliding with custom names', async () => {
+    await registry.save('/summary');
+    await registry.save('/summary 3');
+
+    expect((await registry.save())?.name).toBe('/summary 2');
+  });
+
+  it('uses slash for the root route', async () => {
+    expect((await registryFor('/?view=full#details').save())?.name).toBe('/');
+  });
+
+  it('excludes both hashes and queries from automatic names', async () => {
+    expect((await registryFor('/orders/42?tab=all#details').save())?.name).toBe('/orders/42');
+  });
+
+  it('keeps explicitly supplied names and manual renames', async () => {
+    const checkpoint = await registry.save('Summary ready');
+    expect(checkpoint?.name).toBe('Summary ready');
+
+    registry.rename(checkpoint!.id, 'Reviewed summary');
+    expect(registry.checkpoints()[0].name).toBe('Reviewed summary');
+  });
+
+  it('normalizes legacy automatic names oldest-first and persists them', () => {
+    const oldestAt = '2024-01-01T10:00:00.000Z';
+    const newestAt = '2024-01-02T10:00:00.000Z';
+    const legacy = (id: string, createdAt: string) => ({
+      version: 1 as const,
+      id,
+      name: `/summary · ${new Date(createdAt).toLocaleString()}`,
+      url: '/summary?view=full',
+      createdAt,
+      scopes: [],
+      state: {},
+      sizeBytes: 100,
+    });
+    window.localStorage.setItem('inspector-checkpoints-v1', JSON.stringify([
+      legacy('newest', newestAt),
+      { ...legacy('custom', '2024-01-03T10:00:00.000Z'), name: 'Release candidate' },
+      legacy('oldest', oldestAt),
+    ]));
+
+    const hydrated = registryFor('/');
+
+    expect(hydrated.checkpoints().map(({ name }) => name)).toEqual([
+      'Release candidate', '/summary 2', '/summary',
+    ]);
+    const persisted = JSON.parse(window.localStorage.getItem('inspector-checkpoints-v1')!);
+    expect(persisted.map(({ name }: { name: string }) => name)).toEqual([
+      'Release candidate', '/summary 2', '/summary',
+    ]);
+  });
+
   it('requires namespaced adapter IDs', () => {
     expect(() => registry.register({
       id: 'application',
@@ -68,7 +141,9 @@ describe('InspectorCheckpointRegistry', () => {
       capture: () => ({ compact: false }),
       restore: () => undefined,
     });
+    state.next({ customerName: 'Before' });
     const withSummary = await registry.save();
+    state.next({ customerName: 'Changed' });
     unregister();
     let loaderCalled = false;
     registry.registerRemoteScope('summary', () => {

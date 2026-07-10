@@ -7,7 +7,7 @@
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "paths": {
-      "inspector-ng": ["./dist/inspector-ng"],
+      "inspector-ng": ["./projects/inspector-ng/src/public-api.ts"],
       "@inspector-ng/checkpoints": [
         "./projects/checkpoint-api/src/public-api.ts"
       ]

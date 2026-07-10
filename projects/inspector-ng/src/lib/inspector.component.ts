@@ -258,15 +258,6 @@ export class inspectorComponent implements OnDestroy {
     this.editingCheckpointId.set(null);
   }
 
-  formatCheckpointBytes(bytes: number) {
-    if (bytes < 1024) return `${bytes} B`;
-    return `${(bytes / 1024).toFixed(bytes < 10 * 1024 ? 1 : 0)} KB`;
-  }
-
-  formatCheckpointDate(value: string) {
-    return new Date(value).toLocaleString();
-  }
-
   clearGuides() {
     this.guides.set([]);
     this.selectedGuideId.set(null);

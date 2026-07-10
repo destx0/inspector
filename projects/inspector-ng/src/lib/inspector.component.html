@@ -35,7 +35,7 @@
                 <header class="inspector-checkpoint-panel__header">
                   <div>
                     <strong>Checkpoints</strong>
-                    <span>{{ checkpointRegistry.checkpoints().length }} saved · {{ formatCheckpointBytes(checkpointRegistry.totalBytes()) }}</span>
+                    <span>{{ checkpointRegistry.checkpoints().length }}</span>
                   </div>
                   <button
                     type="button"
@@ -75,7 +75,6 @@
                               {{ checkpoint.name }}
                             </button>
                           }
-                          <span>{{ checkpoint.url }} · {{ formatCheckpointDate(checkpoint.createdAt) }} · {{ formatCheckpointBytes(checkpoint.sizeBytes) }}</span>
                         </div>
                         <div class="inspector-checkpoint-actions">
                           <button type="button" (click)="restoreCheckpoint(checkpoint)" [disabled]="checkpointRegistry.isBusy()">Restore</button>
@@ -85,7 +84,7 @@
                     }
                   </div>
                 } @else {
-                  <p class="inspector-checkpoint-empty">Save a working route and its registered state to return here instantly.</p>
+                  <p class="inspector-checkpoint-empty">No checkpoints yet.</p>
                 }
               </section>
             }

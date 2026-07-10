@@ -97,7 +97,7 @@
   position: absolute;
   top: 0;
   right: calc(100% + 8px);
-  width: min(340px, calc(100vw - 24px));
+  width: min(300px, calc(100vw - 24px));
   max-height: min(420px, calc(100vh - 64px));
   overflow: auto;
   border: 1px solid var(--inspector-panel-edge);
@@ -116,22 +116,25 @@
 
 .inspector-checkpoint-panel__header {
   justify-content: space-between;
-  gap: 12px;
-  padding: 8px;
+  gap: 8px;
+  padding: 6px 8px;
   border-bottom: 1px solid var(--inspector-panel-edge);
 }
 
 .inspector-checkpoint-panel__header strong,
 .inspector-checkpoint-panel__header span {
-  display: block;
+  display: inline;
 }
 
 .inspector-checkpoint-panel__header strong {
   font-size: 12px;
 }
 
+.inspector-checkpoint-panel__header span {
+  margin-left: 5px;
+}
+
 .inspector-checkpoint-panel__header span,
-.inspector-checkpoint-item__main span,
 .inspector-checkpoint-empty,
 .inspector-checkpoint-message {
   color: var(--inspector-muted);
@@ -164,18 +167,19 @@
 .inspector-checkpoint-item {
   justify-content: space-between;
   gap: 8px;
-  padding: 7px 8px;
+  padding: 5px 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .inspector-checkpoint-item__main {
+  flex: 1 1 auto;
   min-width: 0;
 }
 
 .inspector-checkpoint-name,
 .inspector-checkpoint-name-input {
   display: block;
-  max-width: 240px;
+  max-width: 100%;
   overflow: hidden;
   padding: 0;
   color: var(--inspector-text);
