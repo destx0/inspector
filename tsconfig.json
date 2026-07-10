@@ -8,6 +8,9 @@
     "noPropertyAccessFromIndexSignature": true,
     "paths": {
       "inspector-ng": ["./dist/inspector-ng"],
+      "@inspector-ng/checkpoints": [
+        "./projects/checkpoint-api/src/public-api.ts"
+      ]
     },
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,

@@ -56,6 +56,46 @@ That's it. Press **`M`** in your browser to open the inspector toolbar. No furth
 
 ## Configuration
 
+### Developer checkpoints
+
+Checkpoints save the current Angular Router URL plus state you explicitly register. They do **not** record or replay HTTP requests.
+
+```ts
+import { ApplicationConfig } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
+import {
+  createBehaviorSubjectCheckpointAdapter,
+  InspectorCheckpointRegistry,
+  provideInspectorCheckpoints,
+} from 'inspector-ng';
+
+export const appConfig: ApplicationConfig = {
+  providers: [provideInspectorCheckpoints()],
+};
+```
+
+Register serializable state from an application service or component:
+
+```ts
+const application = new BehaviorSubject({ customerName: '', amount: 0 });
+const unregister = checkpointRegistry.register(
+  createBehaviorSubjectCheckpointAdapter('workflow:application', application),
+);
+```
+
+Open the inspector and use the checkpoint button to save, restore, rename, or delete snapshots. Checkpoints use `localStorage`; when the browser quota is reached, the oldest checkpoint is removed to make room. Do not register sensitive values.
+
+For Native Federation, the shell owns `provideInspectorCheckpoints()`. Remotes receive the shell's `InspectorCheckpointRegistry` and register namespaced adapters such as `workflow:application`. The shell should register a remote loader for each scope so remotes are loaded before state is restored:
+
+```ts
+checkpointRegistry.registerRemoteScope('workflow', async () => {
+  const remote = await loadRemoteModule('workflow', './CheckpointAdapters');
+  remote.registerInspectorCheckpointAdapters(checkpointRegistry);
+});
+```
+
+Repeated remote adapter registration is safe, so a bridge may run before every restore. Share `inspector-ng` as a Native Federation singleton in both shell and remotes.
+
 ### Inputs
 
 | Input | Type | Default | Description |

@@ -6,7 +6,12 @@
     "start": "ng build inspector-ng && ng serve",
     "build": "ng build inspector-ng && ng build demo",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "demo:federation:build-lib": "ng build inspector-ng",
+    "demo:federation:shell": "ng build inspector-ng && ng serve shell",
+    "demo:federation:workflow": "ng build inspector-ng && ng serve workflow",
+    "demo:federation:summary": "ng build inspector-ng && ng serve summary",
+    "test:federation": "ng build inspector-ng && ng test shell --no-watch --browsers=ChromeHeadless && ng test workflow --no-watch --browsers=ChromeHeadless && ng test summary --no-watch --browsers=ChromeHeadless"
   },
   "private": true,
   "dependencies": {
@@ -18,11 +23,13 @@
     "@angular/platform-browser": "^17.3.0",
     "@angular/platform-browser-dynamic": "^17.3.0",
     "@angular/router": "^17.3.0",
+    "es-module-shims": "^1.5.12",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.3"
   },
   "devDependencies": {
+    "@angular-architects/native-federation": "~17.1.8",
     "@angular-devkit/build-angular": "^17.3.17",
     "@angular/cli": "^17.3.17",
     "@angular/compiler-cli": "^17.3.0",

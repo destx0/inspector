@@ -1,0 +1,1062 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inspector Vertical Toolbar Lab</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --lab-bg: oklch(17% 0.008 255);
+        --lab-surface: oklch(21% 0.009 255);
+        --lab-line: oklch(33% 0.011 255);
+        --lab-text: oklch(92% 0.008 255);
+        --lab-muted: oklch(66% 0.012 255);
+        --paper: oklch(97% 0.006 255);
+        --paper-raised: oklch(99% 0.003 255);
+        --ink: oklch(25% 0.018 255);
+        --ink-muted: oklch(53% 0.018 255);
+        --paper-line: oklch(89% 0.009 255);
+        --accent: oklch(66% 0.16 252);
+        --accent-dark: oklch(51% 0.18 252);
+        --accent-soft: oklch(93% 0.035 252);
+        --toolbar-bg: oklch(23% 0.012 255);
+        --toolbar-raised: oklch(28% 0.014 255);
+        --toolbar-line: oklch(39% 0.014 255);
+        --toolbar-text: oklch(91% 0.01 255);
+        --toolbar-muted: oklch(68% 0.012 255);
+        --danger: oklch(70% 0.15 25);
+        --space-xs: 4px;
+        --space-sm: 8px;
+        --space-md: 12px;
+        --space-lg: 16px;
+        --space-xl: 24px;
+        --space-2xl: 32px;
+        --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        min-width: 720px;
+        background: var(--lab-bg);
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        background:
+          linear-gradient(var(--lab-line) 1px, transparent 1px),
+          linear-gradient(90deg, var(--lab-line) 1px, transparent 1px),
+          var(--lab-bg);
+        background-size: 32px 32px;
+        color: var(--lab-text);
+        font-family: Aptos, "Segoe UI", sans-serif;
+        font-size: 1rem;
+      }
+
+      button {
+        font: inherit;
+      }
+
+      .lab {
+        width: min(1180px, calc(100% - 64px));
+        margin-inline: auto;
+        padding-block: 48px 64px;
+      }
+
+      .lab-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+        gap: var(--space-xl);
+        margin-bottom: var(--space-xl);
+      }
+
+      .eyebrow {
+        margin: 0 0 var(--space-sm);
+        color: var(--accent);
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 18ch;
+        margin: 0;
+        color: var(--lab-text);
+        font-size: 2rem;
+        font-weight: 650;
+        letter-spacing: -0.035em;
+        line-height: 1.08;
+      }
+
+      .intro {
+        max-width: 38rem;
+        margin: var(--space-md) 0 0;
+        color: var(--lab-muted);
+        font-size: 0.875rem;
+        line-height: 1.55;
+      }
+
+      .dimension-key {
+        display: grid;
+        grid-template-columns: auto auto;
+        gap: var(--space-xs) var(--space-md);
+        margin: 0;
+        padding-bottom: 2px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .dimension-key dt {
+        color: var(--lab-muted);
+        font-size: 0.6875rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .dimension-key dd {
+        margin: 0;
+        color: var(--lab-text);
+        font-family: "Cascadia Code", Consolas, monospace;
+        font-size: 0.75rem;
+        text-align: right;
+      }
+
+      .switcher {
+        display: flex;
+        align-items: center;
+        gap: var(--space-xs);
+        width: fit-content;
+        margin-bottom: var(--space-md);
+        padding: var(--space-xs);
+        border: 1px solid var(--lab-line);
+        background: var(--lab-surface);
+      }
+
+      .switcher button {
+        min-height: 32px;
+        padding: 0 var(--space-md);
+        border: 1px solid transparent;
+        border-radius: 2px;
+        background: transparent;
+        color: var(--lab-muted);
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: 600;
+        transition:
+          background-color 120ms var(--ease-out),
+          color 120ms var(--ease-out),
+          border-color 120ms var(--ease-out);
+      }
+
+      .switcher button:hover {
+        background: oklch(26% 0.011 255);
+        color: var(--lab-text);
+      }
+
+      .switcher button[aria-selected="true"] {
+        border-color: var(--toolbar-line);
+        background: var(--toolbar-raised);
+        color: var(--lab-text);
+      }
+
+      button:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      .comparison {
+        overflow: hidden;
+        border: 1px solid var(--lab-line);
+        background: var(--paper);
+        box-shadow: 0 28px 70px oklch(8% 0.01 255 / 0.34);
+      }
+
+      .window-chrome {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        height: 36px;
+        padding-inline: var(--space-md);
+        border-bottom: 1px solid var(--paper-line);
+        background: oklch(94% 0.007 255);
+        color: var(--ink-muted);
+      }
+
+      .window-controls {
+        display: flex;
+        gap: 6px;
+      }
+
+      .window-controls span {
+        width: 8px;
+        height: 8px;
+        border: 1px solid oklch(72% 0.01 255);
+        border-radius: 50%;
+        background: oklch(86% 0.008 255);
+      }
+
+      .address {
+        font-family: "Cascadia Code", Consolas, monospace;
+        font-size: 0.6875rem;
+        letter-spacing: -0.01em;
+      }
+
+      .window-status {
+        justify-self: end;
+        font-size: 0.6875rem;
+        font-weight: 600;
+      }
+
+      .app-canvas {
+        position: relative;
+        min-height: 580px;
+        overflow: hidden;
+        background: var(--paper);
+        color: var(--ink);
+      }
+
+      .app-header {
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: var(--space-xl);
+        height: 56px;
+        padding: 0 var(--space-xl);
+        border-bottom: 1px solid var(--paper-line);
+        background: var(--paper-raised);
+      }
+
+      .app-brand {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        font-size: 0.875rem;
+        font-weight: 700;
+      }
+
+      .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 3px;
+        background: var(--ink);
+        color: var(--paper-raised);
+        font-size: 0.6875rem;
+      }
+
+      .app-search {
+        width: min(360px, 100%);
+        height: 30px;
+        padding: 0 var(--space-md);
+        border: 1px solid var(--paper-line);
+        border-radius: 3px;
+        background: var(--paper);
+        color: var(--ink-muted);
+        font-size: 0.75rem;
+      }
+
+      .app-avatar {
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: oklch(83% 0.035 68);
+        color: oklch(40% 0.07 50);
+        font-size: 0.6875rem;
+        font-weight: 700;
+      }
+
+      .app-layout {
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr);
+        min-height: 524px;
+      }
+
+      .app-sidebar {
+        padding: var(--space-xl) var(--space-lg);
+        border-right: 1px solid var(--paper-line);
+        background: oklch(95.5% 0.006 255);
+      }
+
+      .app-sidebar p {
+        margin: 0 0 var(--space-sm);
+        padding-inline: var(--space-sm);
+        color: var(--ink-muted);
+        font-size: 0.625rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .app-sidebar ul {
+        display: grid;
+        gap: 2px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .app-sidebar li {
+        padding: 8px;
+        border-radius: 3px;
+        color: var(--ink-muted);
+        font-size: 0.75rem;
+      }
+
+      .app-sidebar li.is-current {
+        background: var(--accent-soft);
+        color: var(--accent-dark);
+        font-weight: 650;
+      }
+
+      .app-main {
+        min-width: 0;
+        padding: var(--space-2xl);
+      }
+
+      .page-heading {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: var(--space-xl);
+        margin-bottom: var(--space-xl);
+      }
+
+      .page-heading h2 {
+        margin: 0;
+        color: var(--ink);
+        font-size: 1.25rem;
+        letter-spacing: -0.02em;
+      }
+
+      .page-heading p {
+        margin: var(--space-xs) 0 0;
+        color: var(--ink-muted);
+        font-size: 0.75rem;
+      }
+
+      .new-issue {
+        min-height: 32px;
+        padding: 0 var(--space-md);
+        border: 1px solid var(--accent-dark);
+        border-radius: 3px;
+        background: var(--accent-dark);
+        color: oklch(98% 0.005 252);
+        font-size: 0.75rem;
+        font-weight: 650;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--space-md);
+        margin-bottom: var(--space-xl);
+      }
+
+      .stat {
+        padding: var(--space-lg);
+        border: 1px solid var(--paper-line);
+        background: var(--paper-raised);
+      }
+
+      .stat span {
+        display: block;
+        color: var(--ink-muted);
+        font-size: 0.6875rem;
+      }
+
+      .stat strong {
+        display: block;
+        margin-top: var(--space-sm);
+        font-size: 1.25rem;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .issue-table {
+        border: 1px solid var(--paper-line);
+        background: var(--paper-raised);
+      }
+
+      .issue-row {
+        display: grid;
+        grid-template-columns: 72px minmax(180px, 1fr) 90px 90px;
+        align-items: center;
+        gap: var(--space-md);
+        min-height: 48px;
+        padding-inline: var(--space-lg);
+        border-bottom: 1px solid var(--paper-line);
+        font-size: 0.75rem;
+      }
+
+      .issue-row:last-child {
+        border-bottom: 0;
+      }
+
+      .issue-row--head {
+        min-height: 36px;
+        background: oklch(96% 0.005 255);
+        color: var(--ink-muted);
+        font-size: 0.625rem;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+
+      .issue-id {
+        color: var(--ink-muted);
+        font-family: "Cascadia Code", Consolas, monospace;
+        font-size: 0.6875rem;
+      }
+
+      .issue-title {
+        overflow: hidden;
+        font-weight: 650;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .tag {
+        width: fit-content;
+        padding: 3px 6px;
+        border-radius: 2px;
+        background: oklch(92% 0.025 145);
+        color: oklch(42% 0.09 145);
+        font-size: 0.625rem;
+        font-weight: 700;
+      }
+
+      .assignee {
+        color: var(--ink-muted);
+      }
+
+      .toolbar-host {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 20;
+      }
+
+      .toolbar-variant[hidden] {
+        display: none;
+      }
+
+      .tool-rail {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        width: 30px;
+        padding: 2px;
+        border: 1px solid var(--toolbar-line);
+        border-radius: 4px;
+        background: var(--toolbar-bg);
+        box-shadow: 0 8px 20px oklch(10% 0.01 255 / 0.25);
+        color: var(--toolbar-muted);
+      }
+
+      .tool-button {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        border: 0;
+        border-radius: 3px;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        transition:
+          background-color 100ms var(--ease-out),
+          color 100ms var(--ease-out),
+          transform 100ms var(--ease-out);
+      }
+
+      .tool-button svg {
+        width: 13px;
+        height: 13px;
+        fill: currentColor;
+      }
+
+      .tool-button:hover {
+        background: var(--toolbar-raised);
+        color: var(--toolbar-text);
+      }
+
+      .tool-button:active {
+        transform: translateY(1px);
+      }
+
+      .tool-button.is-active {
+        background: oklch(35% 0.06 252);
+        color: oklch(87% 0.07 252);
+      }
+
+      .compact-tools {
+        display: grid;
+        width: 24px;
+      }
+
+      .compact-reveal {
+        display: grid;
+        grid-template-rows: 0fr;
+        opacity: 0;
+        transform: translateY(-4px);
+        transition:
+          grid-template-rows 180ms var(--ease-out),
+          opacity 120ms var(--ease-out),
+          transform 180ms var(--ease-out);
+      }
+
+      .compact-reveal__inner {
+        display: grid;
+        gap: 2px;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .toolbar-variant--compact:hover .compact-reveal,
+      .toolbar-variant--compact:focus-within .compact-reveal {
+        grid-template-rows: 1fr;
+        opacity: 1;
+        transform: translateY(2px);
+      }
+
+      .tool-button.is-danger:hover,
+      .tool-button.is-danger:focus-visible {
+        background: oklch(33% 0.055 25);
+        color: var(--danger);
+      }
+
+      .rail-divider {
+        width: 16px;
+        height: 1px;
+        margin-block: 2px;
+        background: var(--toolbar-line);
+      }
+
+      .tooltip {
+        position: absolute;
+        top: 50%;
+        right: calc(100% + 7px);
+        z-index: 40;
+        width: max-content;
+        max-width: 180px;
+        padding: 4px 6px;
+        border: 1px solid var(--toolbar-line);
+        border-radius: 3px;
+        background: oklch(19% 0.011 255);
+        color: var(--toolbar-text);
+        font-size: 0.625rem;
+        font-weight: 600;
+        line-height: 1.25;
+        opacity: 0;
+        pointer-events: none;
+        transform: translate(3px, -50%);
+        transition:
+          opacity 120ms var(--ease-out),
+          transform 120ms var(--ease-out);
+        white-space: nowrap;
+      }
+
+      .tool-button:hover .tooltip,
+      .tool-button:focus-visible .tooltip {
+        opacity: 1;
+        transform: translate(0, -50%);
+      }
+
+      .rail--expandable {
+        z-index: 2;
+      }
+
+      .expand-labels {
+        position: absolute;
+        top: 0;
+        right: 27px;
+        z-index: 1;
+        display: grid;
+        grid-template-rows: repeat(3, 26px) 5px 26px;
+        width: 104px;
+        height: 115px;
+        padding: 3px 8px 3px 10px;
+        border: 1px solid var(--toolbar-line);
+        border-right: 0;
+        border-radius: 4px 0 0 4px;
+        background: var(--toolbar-bg);
+        color: var(--toolbar-text);
+        font-size: 0.6875rem;
+        font-weight: 600;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateX(10px);
+        transition:
+          opacity 150ms var(--ease-out),
+          transform 180ms var(--ease-out);
+      }
+
+      .expand-labels span {
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+      }
+
+      .expand-labels span:last-child {
+        grid-row: 5;
+        color: oklch(80% 0.06 25);
+      }
+
+      .toolbar-variant--expandable:hover .expand-labels,
+      .toolbar-variant--expandable:focus-within .expand-labels {
+        opacity: 1;
+        transform: translateX(0);
+      }
+
+      .tool-dock {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1px;
+        width: 28px;
+        height: 83px;
+        padding: 2px;
+        border: 1px solid var(--toolbar-line);
+        border-radius: 3px;
+        background: var(--toolbar-bg);
+        box-shadow: 0 8px 20px oklch(10% 0.01 255 / 0.25);
+        color: var(--toolbar-muted);
+      }
+
+      .tool-dock .tool-button {
+        width: 22px;
+        height: 22px;
+      }
+
+      .tool-dock .rail-divider {
+        width: 14px;
+        margin-block: 3px;
+      }
+
+      .secondary-count {
+        position: absolute;
+        top: 3px;
+        right: 3px;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+
+      .toolbar-variant.is-disabled .tool-button:not(.is-danger) {
+        color: oklch(49% 0.01 255);
+        pointer-events: none;
+      }
+
+      .toolbar-variant.is-disabled .tool-button.is-danger {
+        color: var(--accent);
+      }
+
+      .canvas-notice {
+        position: absolute;
+        right: 52px;
+        bottom: 16px;
+        z-index: 10;
+        padding: 6px 8px;
+        border: 1px solid var(--paper-line);
+        border-radius: 3px;
+        background: var(--paper-raised);
+        color: var(--ink-muted);
+        font-size: 0.6875rem;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(4px);
+        transition:
+          opacity 150ms var(--ease-out),
+          transform 150ms var(--ease-out);
+      }
+
+      .canvas-notice.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .variant-notes {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: var(--space-xl);
+        min-height: 84px;
+        padding: var(--space-lg) var(--space-xl);
+        border-top: 1px solid var(--lab-line);
+        background: var(--lab-surface);
+      }
+
+      .variant-notes h2 {
+        margin: 0;
+        color: var(--lab-text);
+        font-size: 0.875rem;
+        letter-spacing: -0.01em;
+      }
+
+      .variant-notes p {
+        max-width: 64ch;
+        margin: var(--space-xs) 0 0;
+        color: var(--lab-muted);
+        font-size: 0.75rem;
+        line-height: 1.5;
+      }
+
+      .secondary-tools {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        color: var(--lab-muted);
+        font-size: 0.6875rem;
+        white-space: nowrap;
+      }
+
+      .secondary-tools::before {
+        content: "";
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--accent);
+      }
+
+      .usage-hint {
+        margin: var(--space-md) 0 0;
+        color: var(--lab-muted);
+        font-size: 0.6875rem;
+      }
+
+      kbd {
+        min-width: 20px;
+        padding: 2px 5px;
+        border: 1px solid var(--lab-line);
+        border-bottom-color: oklch(43% 0.012 255);
+        border-radius: 3px;
+        background: var(--lab-surface);
+        color: var(--lab-text);
+        font-family: "Cascadia Code", Consolas, monospace;
+        font-size: 0.625rem;
+      }
+
+      @media (max-width: 900px) {
+        .lab {
+          width: calc(100% - 32px);
+          padding-block: 32px 48px;
+        }
+
+        .lab-header {
+          grid-template-columns: 1fr;
+        }
+
+        .dimension-key {
+          width: fit-content;
+        }
+
+        .app-header,
+        .app-layout {
+          grid-template-columns: 170px minmax(0, 1fr);
+        }
+
+        .app-header {
+          grid-template-columns: 170px minmax(0, 1fr) auto;
+        }
+
+        .app-main {
+          padding: var(--space-xl);
+        }
+
+        .issue-row {
+          grid-template-columns: 64px minmax(160px, 1fr) 80px;
+        }
+
+        .issue-row > :last-child {
+          display: none;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" aria-hidden="true" style="position: absolute">
+      <symbol id="icon-select" viewBox="0 0 16 16">
+        <path d="M2.7 1.8 12 9.5l-4 .7-1.8 3.6L2.7 1.8Zm2.1 3.4 2 6.2 1-2.2 2.4-.4-5.4-3.6Z" />
+      </symbol>
+      <symbol id="icon-checkpoint" viewBox="0 0 16 16">
+        <path d="M3 2h9.2l1.3 1.3V14H3V2Zm1.5 1.5v3h6v-3h-6Zm0 4.5v4.5H12V8H4.5Zm1 1h5v2.5h-5V9Z" />
+      </symbol>
+      <symbol id="icon-more" viewBox="0 0 16 16">
+        <path d="M4 6.8A1.2 1.2 0 1 1 4 9.2a1.2 1.2 0 0 1 0-2.4Zm4 0A1.2 1.2 0 1 1 8 9.2a1.2 1.2 0 0 1 0-2.4Zm4 0a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4Z" />
+      </symbol>
+      <symbol id="icon-type" viewBox="0 0 16 16">
+        <path d="M2.5 2.5h11v3h-1.4l-.35-1.5H8.8v8.5h1.7V14h-5v-1.5h1.7V4H4.25L3.9 5.5H2.5v-3Z" />
+      </symbol>
+      <symbol id="icon-guides" viewBox="0 0 16 16">
+        <path d="M3.5 1.5H5v13H3.5v-13Zm7.5 0h1.5v13H11v-13ZM1.5 3.5h13V5h-13V3.5Zm0 7.5h13v1.5h-13V11Z" />
+      </symbol>
+      <symbol id="icon-power" viewBox="0 0 16 16">
+        <path d="M7.25 1.5h1.5v6h-1.5v-6ZM4.1 3.35l.96 1.15a4.25 4.25 0 1 0 5.88 0l.96-1.15A5.75 5.75 0 1 1 4.1 3.35Z" />
+      </symbol>
+    </svg>
+
+    <main class="lab">
+      <header class="lab-header">
+        <div>
+          <p class="eyebrow">Inspector-ng · interaction study</p>
+          <h1>Vertical toolbar comparison lab</h1>
+          <p class="intro">
+            Compare footprint and discoverability against the same application surface. Guides and Typography remain inactive behind More in every direction.
+          </p>
+        </div>
+        <dl class="dimension-key" aria-label="Selected toolbar dimensions">
+          <dt>Resting rail</dt>
+          <dd id="resting-size">30 × 115 px</dd>
+          <dt>Expanded</dt>
+          <dd id="expanded-size">—</dd>
+        </dl>
+      </header>
+
+      <div class="switcher" role="tablist" aria-label="Toolbar variant">
+        <button id="tab-compact" role="tab" aria-selected="true" aria-controls="variant-compact" data-variant="compact">Compact rail</button>
+        <button id="tab-expandable" role="tab" aria-selected="false" aria-controls="variant-expandable" tabindex="-1" data-variant="expandable">Expandable rail</button>
+        <button id="tab-dock" role="tab" aria-selected="false" aria-controls="variant-dock" tabindex="-1" data-variant="dock">Tool dock</button>
+      </div>
+
+      <section class="comparison" aria-label="Toolbar preview">
+        <div class="window-chrome" aria-hidden="true">
+          <div class="window-controls"><span></span><span></span><span></span></div>
+          <span class="address">localhost:4200/issues</span>
+          <span class="window-status">1280 × 800</span>
+        </div>
+
+        <div class="app-canvas">
+          <header class="app-header">
+            <div class="app-brand"><span class="brand-mark">N</span> Northstar</div>
+            <div class="app-search">Search issues…</div>
+            <div class="app-avatar">OM</div>
+          </header>
+
+          <div class="app-layout">
+            <nav class="app-sidebar" aria-label="Sample application">
+              <p>Workspace</p>
+              <ul>
+                <li>Overview</li>
+                <li class="is-current">Issues <span aria-hidden="true">· 24</span></li>
+                <li>Projects</li>
+                <li>Activity</li>
+              </ul>
+            </nav>
+
+            <div class="app-main">
+              <div class="page-heading">
+                <div>
+                  <h2>Issues</h2>
+                  <p>Track interface work across the Angular application.</p>
+                </div>
+                <button class="new-issue" type="button">New issue</button>
+              </div>
+
+              <div class="stats" aria-label="Issue summary">
+                <div class="stat"><span>Open</span><strong>24</strong></div>
+                <div class="stat"><span>In progress</span><strong>7</strong></div>
+                <div class="stat"><span>Resolved this week</span><strong>16</strong></div>
+              </div>
+
+              <div class="issue-table" aria-label="Recent issues">
+                <div class="issue-row issue-row--head"><span>Key</span><span>Issue</span><span>Status</span><span>Owner</span></div>
+                <div class="issue-row"><span class="issue-id">UI-184</span><span class="issue-title">Align billing summary fields</span><span class="tag">In review</span><span class="assignee">Mira</span></div>
+                <div class="issue-row"><span class="issue-id">UI-179</span><span class="issue-title">Restore workflow from checkpoint</span><span class="tag">Active</span><span class="assignee">Omu</span></div>
+                <div class="issue-row"><span class="issue-id">UI-171</span><span class="issue-title">Measure form spacing at narrow widths</span><span class="tag">Active</span><span class="assignee">Nia</span></div>
+                <div class="issue-row"><span class="issue-id">UI-166</span><span class="issue-title">Audit typography tokens</span><span class="tag">In review</span><span class="assignee">Dev</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="toolbar-host">
+            <div id="variant-compact" class="toolbar-variant toolbar-variant--compact" role="tabpanel" aria-labelledby="tab-compact" data-panel="compact">
+              <div class="tool-rail" aria-label="Compact inspector toolbar">
+                <button class="tool-button js-toggle" type="button" aria-pressed="false">
+                  <svg aria-hidden="true"><use href="#icon-select"></use></svg><span class="tooltip" role="tooltip">Select</span>
+                </button>
+                <button class="tool-button" type="button">
+                  <svg aria-hidden="true"><use href="#icon-checkpoint"></use></svg><span class="tooltip" role="tooltip">Checkpoints</span>
+                </button>
+                <div class="compact-tools">
+                  <button class="tool-button" type="button">
+                    <svg aria-hidden="true"><use href="#icon-more"></use></svg><span class="tooltip" role="tooltip">More · hover to reveal tools</span>
+                  </button>
+                  <div class="compact-reveal">
+                    <div class="compact-reveal__inner">
+                      <button class="tool-button js-toggle" type="button" aria-pressed="false">
+                        <svg aria-hidden="true"><use href="#icon-type"></use></svg><span class="tooltip" role="tooltip">Typography · inactive</span>
+                      </button>
+                      <button class="tool-button js-toggle" type="button" aria-pressed="false">
+                        <svg aria-hidden="true"><use href="#icon-guides"></use></svg><span class="tooltip" role="tooltip">Guides · inactive</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <span class="rail-divider" aria-hidden="true"></span>
+                <button class="tool-button is-danger js-power" type="button" aria-pressed="false">
+                  <svg aria-hidden="true"><use href="#icon-power"></use></svg><span class="tooltip js-power-label" role="tooltip">Disable inspector</span>
+                </button>
+              </div>
+            </div>
+
+            <div id="variant-expandable" class="toolbar-variant toolbar-variant--expandable" role="tabpanel" aria-labelledby="tab-expandable" data-panel="expandable" hidden>
+              <div class="expand-labels" aria-hidden="true"><span>Select</span><span>Checkpoints</span><span>More</span><span class="js-power-label">Disable</span></div>
+              <div class="tool-rail rail--expandable" aria-label="Expandable inspector toolbar">
+                <button class="tool-button js-toggle" type="button" aria-label="Select" aria-pressed="false"><svg aria-hidden="true"><use href="#icon-select"></use></svg></button>
+                <button class="tool-button" type="button" aria-label="Checkpoints"><svg aria-hidden="true"><use href="#icon-checkpoint"></use></svg></button>
+                <button class="tool-button" type="button" aria-label="More; Guides and Typography are off"><svg aria-hidden="true"><use href="#icon-more"></use></svg></button>
+                <span class="rail-divider" aria-hidden="true"></span>
+                <button class="tool-button is-danger js-power" type="button" aria-label="Disable inspector" aria-pressed="false"><svg aria-hidden="true"><use href="#icon-power"></use></svg></button>
+              </div>
+            </div>
+
+            <div id="variant-dock" class="toolbar-variant" role="tabpanel" aria-labelledby="tab-dock" data-panel="dock" hidden>
+              <div class="tool-dock" aria-label="Collapsible inspector tool dock">
+                <button class="tool-button js-toggle" type="button" aria-pressed="false">
+                  <svg aria-hidden="true"><use href="#icon-select"></use></svg><span class="tooltip" role="tooltip">Select</span>
+                </button>
+                <button class="tool-button" type="button">
+                  <svg aria-hidden="true"><use href="#icon-more"></use></svg><span class="secondary-count" aria-hidden="true"></span><span class="tooltip" role="tooltip">More · Checkpoints, Guides, Typography</span>
+                </button>
+                <span class="rail-divider" aria-hidden="true"></span>
+                <button class="tool-button is-danger js-power" type="button" aria-pressed="false">
+                  <svg aria-hidden="true"><use href="#icon-power"></use></svg><span class="tooltip js-power-label" role="tooltip">Disable inspector</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id="canvas-notice" class="canvas-notice" role="status" aria-live="polite">Inspector disabled · press again to enable</div>
+        </div>
+
+        <footer class="variant-notes">
+          <div>
+            <h2 id="variant-name">Compact rail</h2>
+            <p id="variant-description">The best balance of footprint and access: every primary tool remains one click away without competing with the host application.</p>
+          </div>
+          <span class="secondary-tools">Guides + Typography inactive</span>
+        </footer>
+      </section>
+
+      <p class="usage-hint">Try <kbd>Tab</kbd> for focus states, hover the Compact Rail to reveal hidden tools, and hover the Expandable Rail to reveal labels.</p>
+    </main>
+
+    <script>
+      const variants = {
+        compact: {
+          name: "Compact rail",
+          resting: "30 × 115 px",
+          expanded: "30 × 164 px",
+          description: "The best balance of footprint and access: hover or focus the rail to reveal Typography and Guides without making it permanently larger.",
+        },
+        expandable: {
+          name: "Expandable rail",
+          resting: "30 × 115 px",
+          expanded: "131 × 115 px",
+          description: "Icon-dense at rest, then self-explanatory on hover or keyboard focus. It improves discovery without permanently claiming more space.",
+        },
+        dock: {
+          name: "Collapsible tool dock",
+          resting: "28 × 83 px",
+          expanded: "—",
+          description: "The smallest resting footprint. Checkpoints, Guides, and Typography become secondary, trading direct access for a quieter canvas.",
+        },
+      };
+
+      const tabs = [...document.querySelectorAll('[role="tab"]')];
+      const panels = [...document.querySelectorAll('[role="tabpanel"]')];
+      const restingSize = document.querySelector("#resting-size");
+      const expandedSize = document.querySelector("#expanded-size");
+      const variantName = document.querySelector("#variant-name");
+      const variantDescription = document.querySelector("#variant-description");
+      const notice = document.querySelector("#canvas-notice");
+      let noticeTimer;
+
+      function selectVariant(key, focusTab = false) {
+        const details = variants[key];
+        tabs.forEach((tab) => {
+          const selected = tab.dataset.variant === key;
+          tab.setAttribute("aria-selected", String(selected));
+          tab.tabIndex = selected ? 0 : -1;
+          if (selected && focusTab) tab.focus();
+        });
+        panels.forEach((panel) => {
+          panel.hidden = panel.dataset.panel !== key;
+        });
+        restingSize.textContent = details.resting;
+        expandedSize.textContent = details.expanded;
+        variantName.textContent = details.name;
+        variantDescription.textContent = details.description;
+        notice.classList.remove("is-visible");
+      }
+
+      tabs.forEach((tab, index) => {
+        tab.addEventListener("click", () => selectVariant(tab.dataset.variant));
+        tab.addEventListener("keydown", (event) => {
+          if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+          event.preventDefault();
+          let nextIndex = index;
+          if (event.key === "ArrowLeft") nextIndex = (index - 1 + tabs.length) % tabs.length;
+          if (event.key === "ArrowRight") nextIndex = (index + 1) % tabs.length;
+          if (event.key === "Home") nextIndex = 0;
+          if (event.key === "End") nextIndex = tabs.length - 1;
+          selectVariant(tabs[nextIndex].dataset.variant, true);
+        });
+      });
+
+      document.querySelectorAll(".js-toggle").forEach((button) => {
+        button.addEventListener("click", () => {
+          const isActive = button.classList.toggle("is-active");
+          button.setAttribute("aria-pressed", String(isActive));
+          const tooltip = button.querySelector(".tooltip");
+          if (tooltip?.textContent.includes(" · ")) {
+            const label = tooltip.textContent.split(" · ")[0];
+            tooltip.textContent = `${label} · ${isActive ? "active" : "inactive"}`;
+          }
+        });
+      });
+
+      document.querySelectorAll(".js-power").forEach((button) => {
+        button.addEventListener("click", () => {
+          const panel = button.closest(".toolbar-variant");
+          const disabled = panel.classList.toggle("is-disabled");
+          button.setAttribute("aria-pressed", String(disabled));
+          button.setAttribute("aria-label", disabled ? "Enable inspector" : "Disable inspector");
+          panel.querySelectorAll(".js-power-label").forEach((label) => {
+            label.textContent = disabled ? "Enable inspector" : "Disable inspector";
+          });
+          panel.querySelectorAll(".js-toggle").forEach((toggleButton) => {
+            toggleButton.classList.remove("is-active");
+            toggleButton.setAttribute("aria-pressed", "false");
+          });
+          clearTimeout(noticeTimer);
+          notice.textContent = disabled ? "Inspector disabled · press again to enable" : "Inspector enabled · tools remain inactive";
+          notice.classList.add("is-visible");
+          noticeTimer = setTimeout(() => notice.classList.remove("is-visible"), 1800);
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -56,6 +56,10 @@ That's it. Press **`M`** in your browser to open the inspector toolbar. No furth
 
 ## Configuration
 
+### Developer checkpoints
+
+Install `provideInspectorCheckpoints()` in the shell application's providers and register JSON-serializable state with namespaced adapters. Checkpoints save the router URL and registered state only; they do not capture HTTP traffic. See the library README for a `BehaviorSubject` example and Native Federation shell/remote integration guidance.
+
 ### Inputs
 
 | Input | Type | Default | Description |

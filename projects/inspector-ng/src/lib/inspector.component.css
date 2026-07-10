@@ -22,44 +22,221 @@
 
 .inspector-toolbar {
   position: fixed;
-  top: 18px;
-  right: 18px;
+  top: 12px;
+  right: 12px;
   display: block;
   pointer-events: auto;
   z-index: 10000;
 }
 
-.inspector-toolbar__rail,
-.inspector-guide-menu {
+.inspector-toolbar__rail {
   display: flex;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 8px;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 30px;
+  padding: 2px;
+  border-radius: 4px;
   border: 1px solid var(--inspector-panel-edge);
   background: var(--inspector-panel);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
   backdrop-filter: blur(18px);
 }
 
-.inspector-toolbar__rail {
-  align-items: center;
+.inspector-toolbar__divider {
+  width: 16px;
+  height: 1px;
+  margin-block: 2px;
+  background: var(--inspector-panel-edge);
+}
+
+.inspector-toolbar__secondary {
+  display: grid;
+  width: 24px;
+}
+
+.inspector-toolbar__reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    grid-template-rows 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 120ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.inspector-toolbar__reveal-inner {
+  display: grid;
+  gap: 2px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.inspector-toolbar__secondary:hover .inspector-toolbar__reveal,
+.inspector-toolbar__secondary:focus-within .inspector-toolbar__reveal,
+.inspector-toolbar__reveal.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(2px);
 }
 
 .inspector-guide-group {
   position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.inspector-checkpoint-group {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.inspector-checkpoint-panel {
+  position: absolute;
+  top: 0;
+  right: calc(100% + 8px);
+  width: min(340px, calc(100vw - 24px));
+  max-height: min(420px, calc(100vh - 64px));
+  overflow: auto;
+  border: 1px solid var(--inspector-panel-edge);
+  border-radius: 8px;
+  background: var(--inspector-panel);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+  color: var(--inspector-text);
+}
+
+.inspector-checkpoint-panel__header,
+.inspector-checkpoint-item,
+.inspector-checkpoint-actions {
   display: flex;
-  gap: 0;
   align-items: center;
-  border-radius: 6px;
+}
+
+.inspector-checkpoint-panel__header {
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px;
+  border-bottom: 1px solid var(--inspector-panel-edge);
+}
+
+.inspector-checkpoint-panel__header strong,
+.inspector-checkpoint-panel__header span {
+  display: block;
+}
+
+.inspector-checkpoint-panel__header strong {
+  font-size: 12px;
+}
+
+.inspector-checkpoint-panel__header span,
+.inspector-checkpoint-item__main span,
+.inspector-checkpoint-empty,
+.inspector-checkpoint-message {
+  color: var(--inspector-muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.inspector-checkpoint-save,
+.inspector-checkpoint-actions button,
+.inspector-checkpoint-name {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.inspector-checkpoint-save {
+  padding: 5px 7px;
+  border-radius: 5px;
+  background: rgba(79, 140, 255, 0.18);
+  color: #dbeafe;
+  font-size: 10px;
+}
+
+.inspector-checkpoint-list {
+  display: grid;
+}
+
+.inspector-checkpoint-item {
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.inspector-checkpoint-item__main {
+  min-width: 0;
+}
+
+.inspector-checkpoint-name,
+.inspector-checkpoint-name-input {
+  display: block;
+  max-width: 240px;
+  overflow: hidden;
+  padding: 0;
+  color: var(--inspector-text);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inspector-checkpoint-name-input {
+  width: 100%;
+  border: 1px solid rgba(79, 140, 255, 0.6);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.2);
+  outline: none;
+}
+
+.inspector-checkpoint-actions {
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+.inspector-checkpoint-actions button {
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--inspector-muted);
+  font-size: 10px;
+}
+
+.inspector-checkpoint-actions button:hover,
+.inspector-checkpoint-name:hover,
+.inspector-checkpoint-save:hover {
+  color: var(--inspector-text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.inspector-checkpoint-empty,
+.inspector-checkpoint-message {
+  margin: 0;
+  padding: 12px 10px;
+}
+
+.inspector-checkpoint-message--error {
+  color: #fecaca;
 }
 
 .inspector-guide-menu {
   position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
+  top: 0;
+  right: calc(100% + 8px);
+  display: flex;
   min-width: max-content;
   flex-direction: column;
   align-items: stretch;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--inspector-panel-edge);
+  border-radius: 4px;
+  background: var(--inspector-panel);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
 }
 
 .inspector-guide-menu .inspector-segment {
@@ -72,28 +249,40 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 26px;
+  height: 24px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 3px;
   background: transparent;
   color: var(--inspector-muted);
   cursor: pointer;
   transition:
-    background 120ms ease,
-    color 120ms ease;
+    background 100ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 100ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 100ms cubic-bezier(0.16, 1, 0.3, 1);
   font: inherit;
   font-size: 11px;
   letter-spacing: 0.02em;
 }
 
 .inspector-icon-button {
-  width: 26px;
+  position: relative;
+  width: 24px;
 }
 
 .inspector-icon-button svg {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   fill: currentColor;
+}
+
+.inspector-icon-button:active {
+  transform: translateY(1px);
+}
+
+.inspector-icon-button:focus-visible,
+.inspector-segment:focus-visible {
+  outline: 2px solid var(--inspector-blue);
+  outline-offset: 2px;
 }
 
 .inspector-icon-button:hover,
@@ -113,18 +302,42 @@
   color: var(--inspector-text);
 }
 
-.inspector-icon-button--guide-main {
-  border-radius: 6px 0 0 6px;
+.inspector-icon-button--power:hover {
+  background: rgba(239, 68, 68, 0.16);
+  color: #fecaca;
 }
 
-.inspector-icon-button--guide-menu {
-  width: 20px;
-  border-radius: 0 6px 6px 0;
+.inspector-tooltip {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 7px);
+  z-index: 20;
+  width: max-content;
+  padding: 4px 6px;
+  border: 1px solid var(--inspector-panel-edge);
+  border-radius: 3px;
+  background: rgba(17, 19, 24, 0.98);
+  color: var(--inspector-text);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(3px, -50%);
+  transition:
+    opacity 120ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
 }
 
-.inspector-icon-button--guide-menu svg {
-  width: 12px;
-  height: 12px;
+.inspector-icon-button:hover .inspector-tooltip,
+.inspector-icon-button:focus-visible .inspector-tooltip {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+.inspector-guide-group:has(.inspector-guide-menu) .inspector-tooltip {
+  opacity: 0;
 }
 
 .inspector-segment {
@@ -135,6 +348,15 @@
 .inspector-segment--danger:hover {
   background: rgba(239, 68, 68, 0.16);
   color: #fecaca;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inspector-toolbar__reveal,
+  .inspector-icon-button,
+  .inspector-segment,
+  .inspector-tooltip {
+    transition-duration: 0.01ms;
+  }
 }
 
 .inspector-box {

@@ -1,4 +1,5 @@
 export * from "./lib/constants";
+export * from "./lib/checkpoints";
 export * from "./lib/distances";
 export * from "./lib/dom";
 export * from "./lib/geometry";

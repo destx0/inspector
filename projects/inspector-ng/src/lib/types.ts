@@ -91,10 +91,17 @@ export type DistanceOverlay = {
 };
 
 export type inspectorPersistedState = {
-  version: 1;
+  version: 2;
   enabled: boolean;
   toolMode: ToolMode;
   guideOrientation: GuideOrientation;
   guides: Guide[];
   showTypography: boolean;
+};
+
+export type inspectorLegacyPersistedState = Omit<
+  inspectorPersistedState,
+  "version"
+> & {
+  version: 1;
 };

@@ -9,6 +9,7 @@ import {
   PLATFORM_ID,
   computed,
   effect,
+  inject,
   signal,
   viewChild,
 } from '@angular/core';
@@ -32,11 +33,13 @@ import {
   Guide,
   GuideOrientation,
   InspectMeasurement,
+  inspectorLegacyPersistedState,
   inspectorPersistedState,
   Rect,
   TextBlockAnnotation,
   ToolMode,
 } from './types';
+import { InspectorCheckpoint, InspectorCheckpointRegistry } from './checkpoints';
 import { createId, formatValue } from './utils';
 
 @Component({
@@ -58,14 +61,18 @@ export class inspectorComponent implements OnDestroy {
   @Input() hoverHighlightEnabled = true;
   @Input() persistOnReload = false;
 
-  readonly enabled = signal(false);
+  readonly checkpointRegistry = inject(InspectorCheckpointRegistry, { optional: true });
+  readonly checkpointsOpen = signal(false);
+  readonly editingCheckpointId = signal<string | null>(null);
+
+  readonly enabled = signal(true);
   readonly toolMode = signal<ToolMode>('none');
   readonly guideOrientation = signal<GuideOrientation>('vertical');
   readonly guides = signal<Guide[]>([]);
   readonly hoverRect = signal<Rect | null>(null);
   readonly selectedGuideId = signal<string | null>(null);
   readonly selectedMeasurement = signal<InspectMeasurement | null>(null);
-  readonly showTypography = signal(true);
+  readonly showTypography = signal(false);
   readonly altPressed = signal(false);
   readonly distanceOverlay = signal<DistanceOverlay | null>(null);
   readonly textBlocks = signal<TextBlockAnnotation[]>([]);
@@ -154,13 +161,17 @@ export class inspectorComponent implements OnDestroy {
     }
 
     try {
-      const parsed = JSON.parse(stored) as inspectorPersistedState;
-      if (parsed.version === inspector_STATE_VERSION) {
-        this.enabled.set(parsed.enabled);
+      const parsed = JSON.parse(stored) as
+        | inspectorPersistedState
+        | inspectorLegacyPersistedState;
+      if (parsed.version === inspector_STATE_VERSION || parsed.version === 1) {
+        this.enabled.set(true);
         this.toolMode.set(parsed.toolMode);
         this.guideOrientation.set(parsed.guideOrientation);
         this.guides.set(parsed.guides ?? []);
-        this.showTypography.set(parsed.showTypography ?? true);
+        this.showTypography.set(
+          parsed.version === 1 ? false : (parsed.showTypography ?? false),
+        );
         this.recordHistory(parsed.guides ?? []);
       }
     } catch {
@@ -205,6 +216,55 @@ export class inspectorComponent implements OnDestroy {
 
   toggleGuideMenu() {
     this.guideMenuOpen.update((value) => !value);
+    if (this.guideMenuOpen()) {
+      this.checkpointsOpen.set(false);
+    }
+  }
+
+  toggleCheckpoints() {
+    this.checkpointsOpen.update((value) => !value);
+    if (this.checkpointsOpen()) {
+      this.guideMenuOpen.set(false);
+    }
+  }
+
+  disableInspector() {
+    this.setInspectorEnabled(false);
+  }
+
+  async saveCheckpoint() {
+    await this.checkpointRegistry?.save();
+  }
+
+  async restoreCheckpoint(checkpoint: InspectorCheckpoint) {
+    await this.checkpointRegistry?.restore(checkpoint.id);
+  }
+
+  deleteCheckpoint(checkpoint: InspectorCheckpoint) {
+    this.checkpointRegistry?.delete(checkpoint.id);
+  }
+
+  beginRename(checkpoint: InspectorCheckpoint) {
+    this.editingCheckpointId.set(checkpoint.id);
+  }
+
+  finishRename(checkpoint: InspectorCheckpoint, event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.checkpointRegistry?.rename(checkpoint.id, input.value);
+    this.editingCheckpointId.set(null);
+  }
+
+  cancelRename() {
+    this.editingCheckpointId.set(null);
+  }
+
+  formatCheckpointBytes(bytes: number) {
+    if (bytes < 1024) return `${bytes} B`;
+    return `${(bytes / 1024).toFixed(bytes < 10 * 1024 ? 1 : 0)} KB`;
+  }
+
+  formatCheckpointDate(value: string) {
+    return new Date(value).toLocaleString();
   }
 
   clearGuides() {
@@ -240,17 +300,15 @@ export class inspectorComponent implements OnDestroy {
     const key = event.key.toLowerCase();
 
     if (key === 'm') {
-      event.preventDefault();
-      this.enabled.update((value) => !value);
-      if (!this.enabled()) {
-        this.toolMode.set('none');
-        this.hoverRect.set(null);
-        this.selectedGuideId.set(null);
-        this.distanceOverlay.set(null);
-        this.textBlocks.set([]);
-        this.guidePreview.set(null);
+      const target = event.target as HTMLElement | null;
+      if (
+        target?.matches('input, textarea, select') ||
+        target?.isContentEditable
+      ) {
+        return;
       }
-      this.refreshTypographyBlocks();
+      event.preventDefault();
+      this.setInspectorEnabled(!this.enabled());
       return;
     }
 
@@ -449,6 +507,26 @@ export class inspectorComponent implements OnDestroy {
 
     const overlay = this.overlayRoot()?.nativeElement ?? null;
     return !(overlay && overlay.contains(event.target as Node));
+  }
+
+  private setInspectorEnabled(enabled: boolean) {
+    this.enabled.set(enabled);
+    if (!enabled) {
+      this.toolMode.set('none');
+      this.hoverRect.set(null);
+      this.selectedGuideId.set(null);
+      this.selectedMeasurement.set(null);
+      this.distanceOverlay.set(null);
+      this.textBlocks.set([]);
+      this.guidePreview.set(null);
+      this.guideMenuOpen.set(false);
+      this.checkpointsOpen.set(false);
+      this.altPressed.set(false);
+      this.selectedElement = null;
+      this.hoverElement = null;
+      this.draggingGuideId = null;
+    }
+    this.refreshTypographyBlocks();
   }
 
   private selectElementAtPoint(event: MouseEvent) {
