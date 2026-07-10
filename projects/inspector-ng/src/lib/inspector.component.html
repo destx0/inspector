@@ -92,18 +92,7 @@
         }
 
         <div class="inspector-toolbar__secondary">
-          <button
-            type="button"
-            class="inspector-icon-button inspector-icon-button--more"
-            aria-label="More tools; hover or focus to reveal Typography and Guides"
-          >
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M4 6.8A1.2 1.2 0 1 1 4 9.2a1.2 1.2 0 0 1 0-2.4Zm4 0A1.2 1.2 0 1 1 8 9.2a1.2 1.2 0 0 1 0-2.4Zm4 0a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4Z" />
-            </svg>
-            <span class="inspector-tooltip" role="tooltip">More tools</span>
-          </button>
-
-          <div class="inspector-toolbar__reveal" [class.is-open]="guideMenuOpen()">
+          <div class="inspector-toolbar__reveal">
             <div class="inspector-toolbar__reveal-inner">
               <button
                 type="button"
@@ -121,59 +110,28 @@
               <button
                 type="button"
                 class="inspector-icon-button"
-                [class.is-active]="toolMode() === 'guides'"
-                (click)="setToolMode('guides')"
-                aria-label="Guides mode"
+                [class.is-active]="toolMode() === 'guides' && guideOrientation() === 'vertical'"
+                (click)="activateGuideOrientation('vertical')"
+                aria-label="Vertical guides"
               >
                 <svg viewBox="0 0 16 16" aria-hidden="true">
-                  <path d="M4 2h1v12H4zM11 2h1v12h-1zM2 4h12v1H2zM2 11h12v1H2z" />
+                  <path d="M7.25 2h1.5v12h-1.5z" />
                 </svg>
-                <span class="inspector-tooltip" role="tooltip">Guides</span>
+                <span class="inspector-tooltip" role="tooltip">Vertical guides</span>
               </button>
 
-              <div class="inspector-guide-group">
-                <button
-                  type="button"
-                  class="inspector-icon-button inspector-icon-button--ghost"
-                  [class.is-active]="guideMenuOpen()"
-                  (click)="toggleGuideMenu()"
-                  aria-label="Guide options"
-                  [attr.aria-expanded]="guideMenuOpen()"
-                >
-                  <svg viewBox="0 0 16 16" aria-hidden="true">
-                    <path d="M3 3.5h10V5H3V3.5Zm0 3.75h10v1.5H3v-1.5ZM3 11h10v1.5H3V11Z" />
-                  </svg>
-                  <span class="inspector-tooltip" role="tooltip">Guide options</span>
-                </button>
-
-                @if (guideMenuOpen()) {
-                  <div class="inspector-guide-menu">
-                    <button
-                      type="button"
-                      class="inspector-segment"
-                      [class.is-active]="guideOrientation() === 'vertical'"
-                      (click)="setGuideOrientation('vertical')"
-                    >
-                      Vertical
-                    </button>
-                    <button
-                      type="button"
-                      class="inspector-segment"
-                      [class.is-active]="guideOrientation() === 'horizontal'"
-                      (click)="setGuideOrientation('horizontal')"
-                    >
-                      Horizontal
-                    </button>
-                    <button
-                      type="button"
-                      class="inspector-segment inspector-segment--danger"
-                      (click)="clearGuides()"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                }
-              </div>
+              <button
+                type="button"
+                class="inspector-icon-button"
+                [class.is-active]="toolMode() === 'guides' && guideOrientation() === 'horizontal'"
+                (click)="activateGuideOrientation('horizontal')"
+                aria-label="Horizontal guides"
+              >
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M2 7.25h12v1.5H2z" />
+                </svg>
+                <span class="inspector-tooltip" role="tooltip">Horizontal guides</span>
+              </button>
             </div>
           </div>
         </div>

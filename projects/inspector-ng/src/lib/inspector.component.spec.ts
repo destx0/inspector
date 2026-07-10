@@ -31,14 +31,34 @@ describe("inspectorComponent", () => {
     expect(component.showTypography()).toBeFalse();
   });
 
-  it("renders secondary tools inside the compact rail reveal", () => {
+  it("renders direct secondary tools without More or guide options buttons", () => {
     const root = fixture.nativeElement as HTMLElement;
     const reveal = root.querySelector(".inspector-toolbar__reveal");
 
     expect(reveal).not.toBeNull();
     expect(reveal?.querySelector('[aria-label="Typography overlay"]')).not.toBeNull();
-    expect(reveal?.querySelector('[aria-label="Guides mode"]')).not.toBeNull();
-    expect(reveal?.querySelector('[aria-label="Guide options"]')).not.toBeNull();
+    expect(reveal?.querySelector('[aria-label="Vertical guides"]')).not.toBeNull();
+    expect(reveal?.querySelector('[aria-label="Horizontal guides"]')).not.toBeNull();
+    expect(root.querySelector('[aria-label^="More tools"]')).toBeNull();
+    expect(root.querySelector('[aria-label="Guide options"]')).toBeNull();
+  });
+
+  it("activates vertical and horizontal guide modes independently", () => {
+    const root = fixture.nativeElement as HTMLElement;
+    const vertical = root.querySelector('[aria-label="Vertical guides"]') as HTMLButtonElement;
+    const horizontal = root.querySelector('[aria-label="Horizontal guides"]') as HTMLButtonElement;
+
+    vertical.click();
+    fixture.detectChanges();
+    expect(component.toolMode()).toBe("guides");
+    expect(component.guideOrientation()).toBe("vertical");
+    expect(vertical.classList).toContain("is-active");
+
+    horizontal.click();
+    fixture.detectChanges();
+    expect(component.toolMode()).toBe("guides");
+    expect(component.guideOrientation()).toBe("horizontal");
+    expect(horizontal.classList).toContain("is-active");
   });
 
   it("renders the short checkpoint empty state without storage bytes", () => {

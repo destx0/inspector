@@ -76,7 +76,6 @@ export class inspectorComponent implements OnDestroy {
   readonly altPressed = signal(false);
   readonly distanceOverlay = signal<DistanceOverlay | null>(null);
   readonly textBlocks = signal<TextBlockAnnotation[]>([]);
-  readonly guideMenuOpen = signal(false);
   readonly guidePreview = signal<Guide | null>(null);
 
   readonly selectedMetaLine = computed(() => {
@@ -209,23 +208,21 @@ export class inspectorComponent implements OnDestroy {
     this.guidePreview.set(null);
   }
 
+  activateGuideOrientation(orientation: GuideOrientation) {
+    const isActive = this.toolMode() === 'guides' && this.guideOrientation() === orientation;
+    this.setGuideOrientation(orientation);
+    if (isActive || this.toolMode() !== 'guides') {
+      this.setToolMode('guides');
+    }
+  }
+
   toggleTypography() {
     this.showTypography.update((value) => !value);
     this.refreshTypographyBlocks();
   }
 
-  toggleGuideMenu() {
-    this.guideMenuOpen.update((value) => !value);
-    if (this.guideMenuOpen()) {
-      this.checkpointsOpen.set(false);
-    }
-  }
-
   toggleCheckpoints() {
     this.checkpointsOpen.update((value) => !value);
-    if (this.checkpointsOpen()) {
-      this.guideMenuOpen.set(false);
-    }
   }
 
   disableInspector() {
@@ -510,7 +507,6 @@ export class inspectorComponent implements OnDestroy {
       this.distanceOverlay.set(null);
       this.textBlocks.set([]);
       this.guidePreview.set(null);
-      this.guideMenuOpen.set(false);
       this.checkpointsOpen.set(false);
       this.altPressed.set(false);
       this.selectedElement = null;
