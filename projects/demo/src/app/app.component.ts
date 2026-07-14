@@ -19,7 +19,7 @@ export class AppComponent {
     });
   }
 
-  installCmd = `npm install inspector-ng`;
+  installCmd = `npm install inspector-ng@0.0.8 @ngrx/store@^17.2.0`;
 
   tsCode = `import { Component } from '@angular/core';
 import { inspectorComponent } from 'inspector-ng';
@@ -36,4 +36,16 @@ export class AppComponent {}`;
   [persistOnReload]="true"
   [hoverHighlightEnabled]="true"
 ></inspector-overlay>`;
+
+  providerCode = `import { provideRouter } from '@angular/router';
+import { provideStore } from '@ngrx/store';
+import { provideInspectorCheckpoints } from 'inspector-ng';
+
+export const appConfig = {
+  providers: [
+    provideRouter(routes),
+    provideStore(),
+    provideInspectorCheckpoints(),
+  ],
+};`;
 }

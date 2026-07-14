@@ -11,8 +11,10 @@ Inspired by [ibelick](https://github.com/ibelick)'s original design.
 ## Installation
 
 ```bash
-npm install inspector-ng
+npm install inspector-ng@0.0.8 @ngrx/store@^17.2.0
 ```
+
+For a complete new-project walkthrough with copy-paste Store, Router, Redux DevTools, state, local-package, and troubleshooting examples, see the [setup guide](https://github.com/destx0/inspector/blob/main/SETUP_GUIDE.md).
 
 ## Getting Started
 

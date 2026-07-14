@@ -96,10 +96,28 @@
 
     <div class="get-started-card">
       <div class="step-indicator">Step 4</div>
-      <h2>Press M</h2>
+      <h2>Enable Checkpoints</h2>
       <p class="step-desc">
-        That's it. Press <kbd class="inline-kbd">M</kbd> in your browser to open
-        the inspector toolbar. No further configuration needed.
+        Add one provider after your root NgRx Store. Keep your existing Router and Store configuration.
+      </p>
+      <div class="code-block code-block--ts">
+        <pre><code>{{ providerCode }}</code></pre>
+        <button class="copy-btn" (click)="copy(providerCode, 'provider')">
+          @if (copiedId() === "provider") {
+            Copied!
+          } @else {
+            Copy
+          }
+        </button>
+      </div>
+    </div>
+
+    <div class="get-started-card">
+      <div class="step-indicator">Step 5</div>
+      <h2>Save and Restore</h2>
+      <p class="step-desc">
+        Use the rail's Save icon, then press <kbd class="inline-kbd">Ctrl/Cmd + Shift + P</kbd>
+        to search and restore. State is restored first, followed by navigation to the saved route.
       </p>
     </div>
   </section>
@@ -131,6 +149,10 @@
       <div class="shortcut-item">
         <kbd>Esc</kbd>
         <span>Clear state</span>
+      </div>
+      <div class="shortcut-item">
+        <kbd>Ctrl/Cmd + Shift + P</kbd>
+        <span>Restore checkpoint</span>
       </div>
     </div>
   </section>

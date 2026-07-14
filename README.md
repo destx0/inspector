@@ -40,10 +40,12 @@ The packaged library is written to `dist/inspector-ng`.
 
 ## Use it in a real Angular project
 
+For the shortest copy-paste setup plus complete NgRx, Router, Redux DevTools, local-package, persistence, and troubleshooting examples, see the [new project setup guide](SETUP_GUIDE.md).
+
 Install it in an Angular 17 application:
 
 ```bash
-npm install inspector-ng
+npm install inspector-ng@0.0.8 @ngrx/store@^17.2.0
 ```
 
 ### Standalone application
