@@ -85,6 +85,9 @@ describe('inspectorComponent checkpoint command bar', () => {
     expect((await openCommandBar()).defaultPrevented).toBeTrue();
     expect(component.commandBarOpen()).toBeTrue();
     expect(document.activeElement?.id).toBe('inspector-checkpoint-search');
+    expect((document.activeElement as HTMLInputElement).placeholder).toBe('Unleash inspector-ng…');
+    expect(fixture.nativeElement.querySelector('.inspector-command__search-icon--cat')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.inspector-command__cat-eyes')).not.toBeNull();
     expect(fixture.nativeElement.querySelectorAll('.inspector-command-row').length).toBe(2);
     expect(fixture.nativeElement.querySelector('.inspector-command__footer')).toBeNull();
     expect(fixture.nativeElement.querySelector('.inspector-command-row__activity')?.textContent).toContain('Saved');
