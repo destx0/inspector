@@ -171,7 +171,7 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
-The Inspector toolbar now shows one Save checkpoint button. Saving captures a JSON-serializable clone of the current NgRx root state and gives it a route-based name such as `/summary 2`. Press `Ctrl/Cmd+Shift+P` anywhere in the application—even when an input is focused or the Inspector rail is disabled—to fuzzy-search, restore, rename, or delete saved checkpoints.
+Press `Ctrl/Cmd+Shift+P` to open the command palette, then choose Save. Saving captures a JSON-serializable clone of the current NgRx root state and gives it a route-based name such as `/summary 2`. The shortcut works anywhere in the application—even when an input is focused or the Inspector is disabled—and the same palette can fuzzy-search, restore, rename, or delete saved checkpoints.
 
 Checkpoints live in the `inspector-ng` IndexedDB database for the current browser origin. Browser storage needs no permission prompt, has no fixed or configurable filesystem path, is not shared across origins, and is kept until the user deletes it or clears site data. Existing `inspector-checkpoints-v1` localStorage records are not migrated.
 

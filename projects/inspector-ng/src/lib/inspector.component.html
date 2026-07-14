@@ -1,96 +1,4 @@
 <div class="inspector-root" #overlayRoot>
-  @if (enabled()) {
-    <div class="inspector-toolbar">
-      <div class="inspector-toolbar__rail">
-        <button
-          type="button"
-          class="inspector-icon-button"
-          [class.is-active]="toolMode() === 'select'"
-          (click)="setToolMode('select')"
-          aria-label="Select mode"
-        >
-          <svg viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M3 2l8 8-3 .7L6.7 13 6 10 3 2z" />
-          </svg>
-          <span class="inspector-tooltip" role="tooltip">Select</span>
-        </button>
-
-        @if (checkpointService) {
-          <button
-            type="button"
-            class="inspector-icon-button"
-            (click)="saveCheckpoint()"
-            [disabled]="checkpointService.busy()"
-            aria-label="Save checkpoint"
-          >
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M2.5 2h9.6l1.4 1.4V14h-11zm2 1.5v3h6v-3zm.5 6V12h6V9.5z" />
-            </svg>
-            <span class="inspector-tooltip" role="tooltip">Save checkpoint</span>
-          </button>
-        }
-
-        <div class="inspector-toolbar__secondary">
-          <div class="inspector-toolbar__reveal">
-            <div class="inspector-toolbar__reveal-inner">
-              <button
-                type="button"
-                class="inspector-icon-button"
-                [class.is-active]="showTypography()"
-                (click)="toggleTypography()"
-                aria-label="Typography overlay"
-              >
-                <svg viewBox="0 0 16 16" aria-hidden="true">
-                  <path d="M3 4V2h10v2h-4v10H7V4z" />
-                </svg>
-                <span class="inspector-tooltip" role="tooltip">Typography</span>
-              </button>
-
-              <button
-                type="button"
-                class="inspector-icon-button"
-                [class.is-active]="toolMode() === 'guides' && guideOrientation() === 'vertical'"
-                (click)="activateGuideOrientation('vertical')"
-                aria-label="Vertical guides"
-              >
-                <svg viewBox="0 0 16 16" aria-hidden="true">
-                  <path d="M7.25 2h1.5v12h-1.5z" />
-                </svg>
-                <span class="inspector-tooltip" role="tooltip">Vertical guides</span>
-              </button>
-
-              <button
-                type="button"
-                class="inspector-icon-button"
-                [class.is-active]="toolMode() === 'guides' && guideOrientation() === 'horizontal'"
-                (click)="activateGuideOrientation('horizontal')"
-                aria-label="Horizontal guides"
-              >
-                <svg viewBox="0 0 16 16" aria-hidden="true">
-                  <path d="M2 7.25h12v1.5H2z" />
-                </svg>
-                <span class="inspector-tooltip" role="tooltip">Horizontal guides</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <span class="inspector-toolbar__divider" aria-hidden="true"></span>
-        <button
-          type="button"
-          class="inspector-icon-button inspector-icon-button--power"
-          (click)="disableInspector()"
-          aria-label="Disable inspector; press M to enable"
-        >
-          <svg viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M7.25 1.5h1.5v6h-1.5zM4.1 3.35l.96 1.15A4.25 4.25 0 1 0 10.94 4.5l.96-1.15A5.75 5.75 0 1 1 4.1 3.35z" />
-          </svg>
-          <span class="inspector-tooltip" role="tooltip">Disable</span>
-        </button>
-      </div>
-    </div>
-  }
-
   @if (checkpointService) {
     <dialog
       #checkpointDialog
@@ -190,6 +98,67 @@
           }
         </div>
 
+        <footer class="inspector-command__actions" aria-label="Inspector actions">
+          <button
+            type="button"
+            class="inspector-command-action"
+            [class.is-active]="toolMode() === 'select'"
+            (click)="setToolMode('select'); closeCheckpointCommandBar()"
+            aria-label="Select mode"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2l8 8-3 .7L6.7 13 6 10 3 2z" /></svg>
+            <span>Select</span>
+          </button>
+          <button
+            type="button"
+            class="inspector-command-action"
+            [class.is-active]="showTypography()"
+            (click)="toggleTypography(); closeCheckpointCommandBar()"
+            aria-label="Toggle typography overlay"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4V2h10v2h-4v10H7V4z" /></svg>
+            <span>Type</span>
+          </button>
+          <button
+            type="button"
+            class="inspector-command-action"
+            (click)="saveCheckpoint()"
+            [disabled]="checkpointService.busy()"
+            aria-label="Save checkpoint"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 2h9.6l1.4 1.4V14h-11zm2 1.5v3h6v-3zm.5 6V12h6V9.5z" /></svg>
+            <span>Save</span>
+          </button>
+          <button
+            type="button"
+            class="inspector-command-action"
+            [class.is-active]="toolMode() === 'guides' && guideOrientation() === 'vertical'"
+            (click)="activateGuideOrientation('vertical'); closeCheckpointCommandBar()"
+            aria-label="Vertical guides"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7.25 2h1.5v12h-1.5z" /></svg>
+            <span>V</span>
+          </button>
+          <button
+            type="button"
+            class="inspector-command-action"
+            [class.is-active]="toolMode() === 'guides' && guideOrientation() === 'horizontal'"
+            (click)="activateGuideOrientation('horizontal'); closeCheckpointCommandBar()"
+            aria-label="Horizontal guides"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 7.25h12v1.5H2z" /></svg>
+            <span>H</span>
+          </button>
+          <button
+            type="button"
+            class="inspector-command-action inspector-command-action--danger"
+            (click)="closeCheckpointCommandBar(); disableInspector()"
+            aria-label="Disable inspector; press M to enable"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7.25 1.5h1.5v6h-1.5zM4.1 3.35l.96 1.15A4.25 4.25 0 1 0 10.94 4.5l.96-1.15A5.75 5.75 0 1 1 4.1 3.35z" /></svg>
+            <span>Off</span>
+          </button>
+        </footer>
       </section>
     </dialog>
   }

@@ -30,68 +30,6 @@
   pointer-events: none;
 }
 
-/* ── Toolbar ───────────────────────────────────────────────────── */
-
-.inspector-toolbar {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  pointer-events: auto;
-  z-index: 10000;
-}
-
-.inspector-toolbar__rail {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-  width: 30px;
-  padding: 3px;
-  border-radius: 7px;
-  border: 1px solid var(--inspector-panel-edge);
-  background: var(--inspector-panel);
-  box-shadow: var(--inspector-shadow);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
-
-.inspector-toolbar__divider {
-  width: 14px;
-  height: 1px;
-  margin-block: 2px;
-  background: var(--inspector-panel-edge);
-}
-
-.inspector-toolbar__secondary {
-  display: grid;
-  width: 24px;
-}
-
-.inspector-toolbar__reveal {
-  display: grid;
-  grid-template-rows: 0fr;
-  opacity: 0;
-  transform: translateY(-2px);
-  transition:
-    grid-template-rows 160ms var(--inspector-ease),
-    opacity 100ms var(--inspector-ease),
-    transform 160ms var(--inspector-ease);
-}
-
-.inspector-toolbar__reveal-inner {
-  display: grid;
-  gap: 1px;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.inspector-toolbar__rail:hover .inspector-toolbar__reveal,
-.inspector-toolbar__rail:focus-within .inspector-toolbar__reveal {
-  grid-template-rows: 1fr;
-  opacity: 1;
-  transform: none;
-}
-
 /* ── Command palette ───────────────────────────────────────────── */
 
 .inspector-command-dialog {
@@ -149,7 +87,7 @@
 
 .inspector-command {
   display: grid;
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto 1fr auto;
   min-width: 0;
   min-height: 0;
   max-height: min(360px, calc(100vh - 64px));
@@ -389,6 +327,73 @@
   font-size: 11px;
 }
 
+.inspector-command__actions {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 2px;
+  padding: 4px;
+  border-top: 1px solid var(--command-edge);
+}
+
+.inspector-command-action {
+  display: flex;
+  min-width: 0;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 4px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--command-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  text-align: left;
+}
+
+.inspector-command-action svg {
+  width: 11px;
+  height: 11px;
+  flex: 0 0 auto;
+  fill: currentColor;
+}
+
+.inspector-command-action span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inspector-command-action:hover:not(:disabled) {
+  background: oklch(100% 0 0 / 0.06);
+  color: var(--command-text);
+}
+
+.inspector-command-action.is-active {
+  background: oklch(72% 0.13 255 / 0.13);
+  color: oklch(88% 0.05 255);
+}
+
+.inspector-command-action--danger:hover:not(:disabled) {
+  background: oklch(68% 0.17 25 / 0.1);
+  color: oklch(84% 0.07 25);
+}
+
+.inspector-command-action:disabled {
+  cursor: wait;
+  opacity: 0.45;
+}
+
+.inspector-command-action:focus-visible {
+  outline: 1px solid var(--command-accent);
+  outline-offset: -1px;
+}
+
 .inspector-visually-hidden {
   position: absolute;
   width: 1px;
@@ -427,92 +432,7 @@
   color: oklch(90% 0.05 25);
 }
 
-/* ── Toolbar buttons ───────────────────────────────────────────── */
-
-.inspector-icon-button {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--inspector-muted);
-  cursor: pointer;
-  transition:
-    background 80ms var(--inspector-ease),
-    color 80ms var(--inspector-ease);
-  font: inherit;
-}
-
-.inspector-icon-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.inspector-icon-button svg {
-  width: 12px;
-  height: 12px;
-  fill: currentColor;
-}
-
-.inspector-icon-button:active:not(:disabled) {
-  transform: scale(0.94);
-}
-
-.inspector-icon-button:focus-visible {
-  outline: 1px solid var(--inspector-blue);
-  outline-offset: 1px;
-}
-
-.inspector-icon-button:hover:not(:disabled) {
-  background: oklch(100% 0 0 / 0.07);
-  color: var(--inspector-text);
-}
-
-.inspector-icon-button.is-active {
-  background: var(--inspector-blue-soft);
-  color: oklch(88% 0.05 255);
-}
-
-.inspector-icon-button--power:hover:not(:disabled) {
-  background: oklch(62% 0.18 25 / 0.14);
-  color: oklch(84% 0.07 25);
-}
-
-.inspector-tooltip {
-  position: absolute;
-  top: 50%;
-  right: calc(100% + 6px);
-  z-index: 20;
-  width: max-content;
-  padding: 3px 6px;
-  border: 1px solid var(--inspector-panel-edge);
-  border-radius: 4px;
-  background: oklch(15% 0.012 280 / 0.97);
-  color: var(--inspector-text);
-  font-size: 10px;
-  font-weight: 500;
-  line-height: 1.2;
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(2px, -50%);
-  transition: opacity 80ms var(--inspector-ease);
-  white-space: nowrap;
-}
-
-.inspector-icon-button:hover .inspector-tooltip,
-.inspector-icon-button:focus-visible .inspector-tooltip {
-  opacity: 1;
-  transform: translate(0, -50%);
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .inspector-toolbar__reveal,
-  .inspector-icon-button,
-  .inspector-tooltip,
   .inspector-command-dialog {
     transition-duration: 0.01ms !important;
   }

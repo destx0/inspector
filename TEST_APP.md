@@ -24,7 +24,7 @@ Start the shell after both remotes report ready, then open `http://localhost:420
 ## Manual checkpoint test
 
 1. Complete customer name, account type, amount, and terms, then continue to summary.
-2. Use the compact Save checkpoint toolbar button. There is no naming dialog.
+2. Open the command palette and use the compact Save action. There is no naming dialog.
 3. Return to the workflow and change the values.
 4. Press `Ctrl/Cmd+Shift+P`, select the saved checkpoint using fuzzy search, and press `Enter`.
 5. Confirm that the original values return and the shell navigates to the route where the checkpoint was saved.

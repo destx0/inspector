@@ -54,7 +54,7 @@ Place `<inspector-overlay>` in your root template (e.g. `app.component.html`). I
 
 ### Step 3: Press `M` to toggle the inspector
 
-That's it. Press **`M`** in your browser to open the inspector toolbar. No further configuration is required.
+That's it. Press **`Ctrl/Cmd + Shift + P`** in your browser to open the Inspector command palette. No further configuration is required.
 
 ## Configuration
 
@@ -74,7 +74,7 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
-Use the compact toolbar button to save the current JSON-serializable NgRx root state immediately. Use `Ctrl/Cmd+Shift+P` to open the fuzzy checkpoint finder. `F2` renames the selected record and `Delete` opens inline confirmation.
+Use the compact Save action in the command palette to capture the current JSON-serializable NgRx root state immediately. `Ctrl/Cmd+Shift+P` opens the fuzzy checkpoint finder. `F2` renames the selected record and `Delete` opens inline confirmation.
 
 Records are stored per origin in IndexedDB database `inspector-ng`, object store `checkpoints`. This needs no browser permission prompt and does not map to a visible or fixed OS path. Nothing is evicted automatically. Existing `inspector-checkpoints-v1` localStorage records are deliberately ignored.
 

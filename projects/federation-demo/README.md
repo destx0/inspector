@@ -32,13 +32,13 @@ Open `http://localhost:4200/workflow`.
 ## Manual checkpoint flow
 
 1. Complete both workflow steps and open the summary.
-2. Select the Save checkpoint icon in the Inspector toolbar. It saves immediately with a route-based name.
+2. Open the command palette with `Ctrl/Cmd+Shift+P`, then choose Save. It saves immediately with a route-based name.
 3. Return to the workflow and change the values.
 4. Press `Ctrl/Cmd+Shift+P`, fuzzy-search the saved name, and press `Enter`.
 5. Confirm that the restored NgRx state appears and the shell navigates back to the checkpoint route.
 6. Reload the shell and reopen the command bar to confirm the catalog remains in IndexedDB.
 
-The shortcut also works while an application input is focused and while the Inspector rail is disabled. `F2` renames the active checkpoint; `Delete` starts inline deletion confirmation.
+The shortcut also works while an application input is focused and while the Inspector is disabled. `F2` renames the active checkpoint; `Delete` starts inline deletion confirmation.
 
 ## Storage and scope
 

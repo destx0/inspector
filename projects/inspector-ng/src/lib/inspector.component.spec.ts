@@ -94,7 +94,7 @@ describe('inspectorComponent checkpoint command bar', () => {
     expect((await openCommandBar(true)).defaultPrevented).toBeTrue();
   });
 
-  it('opens while an application input is focused and while the rail is disabled', async () => {
+  it('opens while an application input is focused and while the inspector is disabled', async () => {
     const input = document.createElement('input');
     document.body.appendChild(input);
     input.focus();
@@ -144,7 +144,7 @@ describe('inspectorComponent checkpoint command bar', () => {
     expect(fixture.nativeElement.textContent).toContain('Delete “Summary ready”?');
   });
 
-  it('saves immediately from the toolbar and shows a status toast', async () => {
+  it('saves immediately from the command palette and shows a status toast', async () => {
     const saved = { ...records[0], id: 'saved', name: '/summary' };
     const save = spyOn(service, 'save').and.resolveTo(saved);
     (fixture.nativeElement.querySelector('[aria-label="Save checkpoint"]') as HTMLButtonElement).click();
