@@ -1,330 +1,356 @@
-import { ENVIRONMENT_INITIALIZER, Injectable, Inject, PLATFORM_ID, Provider, computed, inject, signal } from '@angular/core';
+import {
+  EnvironmentProviders,
+  Inject,
+  Injectable,
+  InjectionToken,
+  Optional,
+  PLATFORM_ID,
+  makeEnvironmentProviders,
+  signal,
+} from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
-import { BehaviorSubject } from 'rxjs';
-import { createReduxDevToolsApplicationCheckpointAdapter } from './redux-devtools-checkpoints';
+import {
+  Action,
+  ActionReducer,
+  META_REDUCERS,
+  Store,
+} from '@ngrx/store';
+import { firstValueFrom, take } from 'rxjs';
 
-export type InspectorCheckpointValue =
-  | string
-  | number
-  | boolean
-  | null
-  | InspectorCheckpointValue[]
-  | { [key: string]: InspectorCheckpointValue };
-
-export interface InspectorCheckpointAdapter {
-  id: string;
-  capture(): InspectorCheckpointValue | Promise<InspectorCheckpointValue>;
-  restore(value: InspectorCheckpointValue): void | Promise<void>;
-}
-
-export interface InspectorCheckpoint {
+export interface InspectorCheckpointRecord {
   version: 1;
   id: string;
   name: string;
-  url: string;
+  route: string;
   createdAt: string;
-  scopes: string[];
-  state: Record<string, InspectorCheckpointValue>;
-  sizeBytes: number;
+  state: unknown;
 }
 
-export type InspectorCheckpointRemoteLoader = () => void | Promise<void>;
+interface RestoreCheckpointAction extends Action {
+  type: typeof RESTORE_CHECKPOINT;
+  state: unknown;
+}
 
-const STORAGE_KEY = 'inspector-checkpoints-v1';
+const RESTORE_CHECKPOINT = '[Inspector Checkpoints] Restore';
+const DATABASE_NAME = 'inspector-ng';
+const DATABASE_VERSION = 1;
+const STORE_NAME = 'checkpoints';
+
+export const INSPECTOR_CHECKPOINT_REPOSITORY =
+  new InjectionToken<InspectorCheckpointRepository>('INSPECTOR_CHECKPOINT_REPOSITORY');
+
+export function inspectorCheckpointMetaReducer<T>(
+  reducer: ActionReducer<T>,
+): ActionReducer<T> {
+  return (state, action) => {
+    if (action.type === RESTORE_CHECKPOINT) {
+      return (action as RestoreCheckpointAction).state as T;
+    }
+    return reducer(state, action);
+  };
+}
+
+export abstract class InspectorCheckpointRepository {
+  abstract list(): Promise<InspectorCheckpointRecord[]>;
+  abstract put(checkpoint: InspectorCheckpointRecord): Promise<void>;
+  abstract delete(id: string): Promise<void>;
+}
 
 @Injectable()
-export class InspectorCheckpointRegistry {
-  readonly checkpoints = signal<InspectorCheckpoint[]>([]);
-  readonly isBusy = signal(false);
-  readonly error = signal<string | null>(null);
-  readonly warning = signal<string | null>(null);
-  readonly totalBytes = computed(() =>
-    this.checkpoints().reduce((total, checkpoint) => total + checkpoint.sizeBytes, 0),
-  );
+export class IndexedDbCheckpointRepository extends InspectorCheckpointRepository {
+  private databasePromise: Promise<IDBDatabase> | null = null;
 
-  private readonly adapters = new Map<string, InspectorCheckpointAdapter>();
-  private readonly remoteLoaders = new Map<string, InspectorCheckpointRemoteLoader>();
-  private readonly isBrowser: boolean;
+  constructor(@Inject(PLATFORM_ID) private readonly platformId: object) {
+    super();
+  }
+
+  async list(): Promise<InspectorCheckpointRecord[]> {
+    const database = await this.database();
+    const values = await this.request<unknown[]>(
+      database.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).getAll(),
+    );
+    return values
+      .filter(isCheckpointRecord)
+      .sort(newestFirst);
+  }
+
+  async put(checkpoint: InspectorCheckpointRecord): Promise<void> {
+    const database = await this.database();
+    await this.transactionComplete(database, 'readwrite', (store) => store.put(checkpoint));
+  }
+
+  async delete(id: string): Promise<void> {
+    const database = await this.database();
+    await this.transactionComplete(database, 'readwrite', (store) => store.delete(id));
+  }
+
+  private database(): Promise<IDBDatabase> {
+    if (!isPlatformBrowser(this.platformId) || typeof indexedDB === 'undefined') {
+      return Promise.reject(new Error('Checkpoints are only available in a browser with IndexedDB.'));
+    }
+    if (this.databasePromise) return this.databasePromise;
+
+    this.databasePromise = new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
+      request.onupgradeneeded = () => {
+        const database = request.result;
+        if (database.objectStoreNames.contains(STORE_NAME)) return;
+        const store = database.createObjectStore(STORE_NAME, { keyPath: 'id' });
+        store.createIndex('createdAt', 'createdAt');
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error ?? new Error('IndexedDB could not be opened.'));
+      request.onblocked = () => reject(new Error('IndexedDB is blocked by another open tab.'));
+    });
+    return this.databasePromise;
+  }
+
+  private request<T>(request: IDBRequest<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error ?? new Error('IndexedDB request failed.'));
+    });
+  }
+
+  private transactionComplete(
+    database: IDBDatabase,
+    mode: IDBTransactionMode,
+    operation: (store: IDBObjectStore) => IDBRequest,
+  ): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction(STORE_NAME, mode);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error ?? new Error('IndexedDB transaction failed.'));
+      transaction.onabort = () => reject(transaction.error ?? new Error('IndexedDB transaction was aborted.'));
+      operation(transaction.objectStore(STORE_NAME));
+    });
+  }
+}
+
+@Injectable()
+export class InspectorCheckpointService {
+  readonly checkpoints = signal<InspectorCheckpointRecord[]>([]);
+  readonly loading = signal(false);
+  readonly busy = signal(false);
+  readonly error = signal<string | null>(null);
 
   constructor(
-    @Inject(PLATFORM_ID) platformId: object,
-    @Inject(Router) private readonly router: Router,
-  ) {
-    this.isBrowser = isPlatformBrowser(platformId);
-    this.hydrate();
-  }
+    @Inject(INSPECTOR_CHECKPOINT_REPOSITORY)
+    private readonly repository: InspectorCheckpointRepository,
+    @Optional() @Inject(Store) private readonly store: Store | null,
+    @Optional() @Inject(Router) private readonly router: Router | null,
+    @Inject(PLATFORM_ID) private readonly platformId: object,
+  ) {}
 
-  register(adapter: InspectorCheckpointAdapter): () => void {
-    if (!adapter.id.includes(':')) {
-      throw new Error('Checkpoint adapter IDs must be namespaced (for example, workflow:application).');
-    }
-    if (this.adapters.has(adapter.id)) {
-      // Remote bridge loaders can run more than once across checkpoint restores.
-      // Treat repeated registration as idempotent so a loaded remote stays usable.
-      return () => undefined;
-    }
-    this.adapters.set(adapter.id, adapter);
-    return () => this.adapters.delete(adapter.id);
-  }
-
-  registerRemoteScope(scope: string, loader: InspectorCheckpointRemoteLoader): () => void {
-    this.remoteLoaders.set(scope, loader);
-    return () => this.remoteLoaders.delete(scope);
-  }
-
-  async save(name?: string): Promise<InspectorCheckpoint | null> {
+  async load(): Promise<void> {
     this.error.set(null);
-    if (!this.isBrowser) {
-      this.error.set('Checkpoints are only available in a browser.');
+    this.loading.set(true);
+    try {
+      this.checkpoints.set((await this.repository.list()).sort(newestFirst));
+    } catch (error) {
+      this.error.set(this.messageFor(error, 'Saved checkpoints could not be loaded. Try reloading the page.'));
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  async save(): Promise<InspectorCheckpointRecord | null> {
+    this.error.set(null);
+    if (!this.store) {
+      this.error.set(this.missingStoreMessage());
       return null;
     }
 
-    this.isBusy.set(true);
+    this.busy.set(true);
     try {
-      const state: Record<string, InspectorCheckpointValue> = {};
-      for (const adapter of this.adapters.values()) {
-        state[adapter.id] = this.cloneValue(await adapter.capture(), adapter.id);
-      }
-      const createdAt = new Date().toISOString();
-      const checkpoint: InspectorCheckpoint = {
+      const currentState = await firstValueFrom(this.store.pipe(take(1)));
+      const state = cloneJson(currentState);
+      const persisted = await this.repository.list();
+      const route = this.currentRoute();
+      const pathname = this.currentPathname();
+      const checkpoint: InspectorCheckpointRecord = {
         version: 1,
-        id: this.createId(),
-        name: name?.trim() || this.nextAutomaticName(this.routePath(this.router.url)),
-        url: this.router.url,
-        createdAt,
-        scopes: this.getScopes(Object.keys(state)),
+        id: createCheckpointId(),
+        name: nextAutomaticName(pathname, persisted.map(({ name }) => name)),
+        route,
+        createdAt: new Date().toISOString(),
         state,
-        sizeBytes: 0,
       };
-      checkpoint.sizeBytes = this.sizeOf(checkpoint);
-      this.persistWithEviction([checkpoint, ...this.checkpoints()]);
-      return this.checkpoints().find((item) => item.id === checkpoint.id) ?? null;
+      await this.repository.put(checkpoint);
+      this.checkpoints.set([checkpoint, ...persisted].sort(newestFirst));
+      return checkpoint;
     } catch (error) {
-      this.error.set(this.messageFor(error, 'Unable to save checkpoint.'));
+      this.error.set(this.storageMessage(error, 'The checkpoint could not be saved.'));
       return null;
     } finally {
-      this.isBusy.set(false);
+      this.busy.set(false);
     }
   }
 
   async restore(id: string): Promise<boolean> {
-    const checkpoint = this.checkpoints().find((item) => item.id === id);
     this.error.set(null);
-    this.warning.set(null);
-    if (!checkpoint) {
-      this.error.set('Checkpoint not found.');
+    if (!this.store) {
+      this.error.set(this.missingStoreMessage());
       return false;
     }
-
-    this.isBusy.set(true);
+    this.busy.set(true);
     try {
-      for (const scope of checkpoint.scopes) {
-        const loader = this.remoteLoaders.get(scope);
-        if (loader) {
-          await loader();
-        }
+      const checkpoint = (await this.repository.list()).find((item) => item.id === id);
+      if (!checkpoint) throw new Error('Checkpoint not found. It may have been deleted in another tab.');
+      const state = cloneJson(
+        checkpoint.state,
+        `“${checkpoint.name}” could not be decoded. Delete it and save a new checkpoint.`,
+      );
+      this.store.dispatch({ type: RESTORE_CHECKPOINT, state } as RestoreCheckpointAction);
+      if (this.router && !await this.router.navigateByUrl(checkpoint.route)) {
+        throw new Error(`The state was restored, but navigation to “${checkpoint.route}” was cancelled.`);
       }
-
-      const missing: string[] = [];
-      for (const [adapterId, value] of Object.entries(checkpoint.state)) {
-        const adapter = this.adapters.get(adapterId);
-        if (!adapter) {
-          missing.push(adapterId);
-          continue;
-        }
-        await adapter.restore(this.cloneValue(value, adapterId));
-      }
-      if (missing.length) {
-        this.warning.set(`Skipped ${missing.length} unavailable adapter${missing.length === 1 ? '' : 's'}: ${missing.join(', ')}.`);
-      }
-      await this.router.navigateByUrl(checkpoint.url);
       return true;
     } catch (error) {
-      this.error.set(this.messageFor(error, 'Unable to restore checkpoint.'));
+      this.error.set(this.messageFor(error, 'The checkpoint could not be restored. Delete it and save a new one.'));
       return false;
     } finally {
-      this.isBusy.set(false);
+      this.busy.set(false);
     }
   }
 
-  rename(id: string, name: string): void {
+  async rename(id: string, name: string): Promise<boolean> {
+    this.error.set(null);
     const nextName = name.trim();
     if (!nextName) {
-      this.error.set('A checkpoint name is required.');
-      return;
+      this.error.set('Please enter a checkpoint name.');
+      return false;
     }
-    this.error.set(null);
-    const next = this.checkpoints().map((checkpoint) =>
-      checkpoint.id === id ? { ...checkpoint, name: nextName } : checkpoint,
-    );
-    this.persistWithEviction(next);
-  }
 
-  delete(id: string): void {
-    this.error.set(null);
-    this.persistWithEviction(this.checkpoints().filter((checkpoint) => checkpoint.id !== id));
-  }
-
-  private hydrate(): void {
-    if (!this.isBrowser) {
-      return;
-    }
+    this.busy.set(true);
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as unknown;
-      if (!Array.isArray(parsed)) return;
-      const checkpoints = parsed.filter(this.isCheckpoint);
-      const normalized = this.normalizeLegacyNames(checkpoints);
-      const sorted = normalized.checkpoints.sort((a, b) =>
-        b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id)
+      const checkpoints = await this.repository.list();
+      if (checkpoints.some((item) => item.id !== id && item.name.toLocaleLowerCase() === nextName.toLocaleLowerCase())) {
+        throw new Error(`A checkpoint named “${nextName}” already exists. Choose a different name.`);
+      }
+      const checkpoint = checkpoints.find((item) => item.id === id);
+      if (!checkpoint) throw new Error('Checkpoint not found. It may have been deleted in another tab.');
+      await this.repository.put({ ...checkpoint, name: nextName });
+      this.checkpoints.set(
+        checkpoints.map((item) => item.id === id ? { ...item, name: nextName } : item).sort(newestFirst),
       );
-      this.checkpoints.set(sorted);
-      if (normalized.changed) {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sorted));
-      }
-    } catch {
-      this.warning.set('Saved checkpoints could not be read and were ignored.');
+      return true;
+    } catch (error) {
+      this.error.set(this.storageMessage(error, 'The checkpoint could not be renamed.'));
+      return false;
+    } finally {
+      this.busy.set(false);
     }
   }
 
-  private persistWithEviction(checkpoints: InspectorCheckpoint[]): void {
-    if (!this.isBrowser) return;
-    let candidate = checkpoints;
-    while (true) {
-      try {
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(candidate));
-        this.checkpoints.set(candidate);
-        return;
-      } catch (error) {
-        if (!this.isQuotaError(error) || candidate.length === 0) {
-          throw error;
-        }
-        candidate = candidate.slice(0, -1);
-        this.warning.set('Storage was full; the oldest checkpoint was removed.');
-      }
-    }
-  }
-
-  private cloneValue(value: unknown, adapterId: string): InspectorCheckpointValue {
+  async delete(id: string): Promise<boolean> {
+    this.error.set(null);
+    this.busy.set(true);
     try {
-      const serialized = JSON.stringify(value);
-      if (serialized === undefined) throw new Error('undefined values are not supported');
-      return JSON.parse(serialized) as InspectorCheckpointValue;
-    } catch {
-      throw new Error(`Adapter "${adapterId}" returned a value that cannot be JSON serialized.`);
+      await this.repository.delete(id);
+      this.checkpoints.set(this.checkpoints().filter((item) => item.id !== id));
+      return true;
+    } catch (error) {
+      this.error.set(this.storageMessage(error, 'The checkpoint could not be deleted.'));
+      return false;
+    } finally {
+      this.busy.set(false);
     }
   }
 
-  private getScopes(adapterIds: string[]): string[] {
-    return [...new Set(adapterIds.map((id) => id.split(':', 1)[0]))];
+  clearError(): void {
+    this.error.set(null);
   }
 
-  private routePath(url: string): string {
-    return url.split(/[?#]/, 1)[0] || '/';
+  private currentRoute(): string {
+    if (!isPlatformBrowser(this.platformId)) return '/';
+    return `${this.currentPathname()}${window.location.search}${window.location.hash}`;
   }
 
-  private nextAutomaticName(route: string, usedNames = new Set(this.checkpoints().map(({ name }) => name))): string {
-    if (!usedNames.has(route)) return route;
-    for (let suffix = 2; ; suffix += 1) {
-      const candidate = `${route} ${suffix}`;
-      if (!usedNames.has(candidate)) return candidate;
+  private currentPathname(): string {
+    if (!isPlatformBrowser(this.platformId)) return '/';
+    return window.location.pathname || '/';
+  }
+
+  private missingStoreMessage(): string {
+    return 'The NgRx root store is unavailable. Check that provideInspectorCheckpoints() is registered after provideStore().';
+  }
+
+  private storageMessage(error: unknown, fallback: string): string {
+    if (isQuotaError(error)) {
+      return 'Browser storage is full. Delete old checkpoints, then try saving again.';
     }
-  }
-
-  private normalizeLegacyNames(checkpoints: InspectorCheckpoint[]): {
-    checkpoints: InspectorCheckpoint[];
-    changed: boolean;
-  } {
-    const legacyIds = new Set(
-      checkpoints.filter((checkpoint) => this.isLegacyAutomaticName(checkpoint)).map(({ id }) => id),
-    );
-    if (!legacyIds.size) return { checkpoints, changed: false };
-
-    const usedNames = new Set(
-      checkpoints.filter(({ id }) => !legacyIds.has(id)).map(({ name }) => name),
-    );
-    const names = new Map<string, string>();
-    const oldestFirst = checkpoints
-      .filter(({ id }) => legacyIds.has(id))
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
-
-    for (const checkpoint of oldestFirst) {
-      const name = this.nextAutomaticName(this.routePath(checkpoint.url), usedNames);
-      names.set(checkpoint.id, name);
-      usedNames.add(name);
-    }
-
-    return {
-      checkpoints: checkpoints.map((checkpoint) =>
-        names.has(checkpoint.id) ? { ...checkpoint, name: names.get(checkpoint.id)! } : checkpoint
-      ),
-      changed: true,
-    };
-  }
-
-  private isLegacyAutomaticName(checkpoint: InspectorCheckpoint): boolean {
-    const route = this.routePath(checkpoint.url);
-    const prefix = `${route} · `;
-    if (!checkpoint.name.startsWith(prefix)) return false;
-    const timestamp = checkpoint.name.slice(prefix.length);
-    if (timestamp === new Date(checkpoint.createdAt).toLocaleString()) return true;
-
-    const parsedTimestamp = Date.parse(timestamp);
-    const createdTimestamp = Date.parse(checkpoint.createdAt);
-    return Number.isFinite(parsedTimestamp) && Number.isFinite(createdTimestamp) &&
-      Math.abs(parsedTimestamp - createdTimestamp) < 1000;
-  }
-
-  private createId(): string {
-    return `checkpoint-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-  }
-
-  private sizeOf(checkpoint: InspectorCheckpoint): number {
-    return new Blob([JSON.stringify(checkpoint)]).size;
-  }
-
-  private isQuotaError(error: unknown): boolean {
-    return error instanceof DOMException && (
-      error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED'
-    );
+    return this.messageFor(error, fallback);
   }
 
   private messageFor(error: unknown, fallback: string): string {
-    return error instanceof Error ? error.message : fallback;
+    return error instanceof Error && error.message ? error.message : fallback;
   }
-
-  private isCheckpoint = (value: unknown): value is InspectorCheckpoint => {
-    if (!value || typeof value !== 'object') return false;
-    const checkpoint = value as Partial<InspectorCheckpoint>;
-    return checkpoint.version === 1 && typeof checkpoint.id === 'string' &&
-      typeof checkpoint.name === 'string' && typeof checkpoint.url === 'string' &&
-      typeof checkpoint.createdAt === 'string' && Array.isArray(checkpoint.scopes) &&
-      !!checkpoint.state && typeof checkpoint.state === 'object' && typeof checkpoint.sizeBytes === 'number';
-  };
 }
 
-export function provideInspectorCheckpoints(): Provider[] {
-  return [
-    InspectorCheckpointRegistry,
+export function provideInspectorCheckpoints(): EnvironmentProviders {
+  return makeEnvironmentProviders([
+    IndexedDbCheckpointRepository,
     {
-      provide: ENVIRONMENT_INITIALIZER,
-      multi: true,
-      useValue: () => inject(InspectorCheckpointRegistry).register(
-        createReduxDevToolsApplicationCheckpointAdapter(),
-      ),
+      provide: INSPECTOR_CHECKPOINT_REPOSITORY,
+      useExisting: IndexedDbCheckpointRepository,
     },
-  ];
+    InspectorCheckpointService,
+    {
+      provide: META_REDUCERS,
+      multi: true,
+      useValue: inspectorCheckpointMetaReducer,
+    },
+  ]);
 }
 
-export function createBehaviorSubjectCheckpointAdapter<T>(
-  id: string,
-  subject: BehaviorSubject<T>,
-): InspectorCheckpointAdapter {
-  return {
-    id,
-    capture: () => subject.value as unknown as InspectorCheckpointValue,
-    restore: (value) => subject.next(value as T),
-  };
+export function nextAutomaticName(route: string, names: string[]): string {
+  const used = new Set(names.map((name) => name.toLocaleLowerCase()));
+  if (!used.has(route.toLocaleLowerCase())) return route;
+  for (let suffix = 2; ; suffix += 1) {
+    const candidate = `${route} ${suffix}`;
+    if (!used.has(candidate.toLocaleLowerCase())) return candidate;
+  }
+}
+
+function cloneJson(
+  value: unknown,
+  failureMessage = 'The NgRx root state is not JSON-serializable. Remove circular or unsupported values and try again.',
+): unknown {
+  try {
+    const serialized = JSON.stringify(value);
+    if (serialized === undefined) throw new Error();
+    return JSON.parse(serialized) as unknown;
+  } catch {
+    throw new Error(failureMessage);
+  }
+}
+
+function createCheckpointId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `checkpoint-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function isQuotaError(error: unknown): boolean {
+  return error instanceof DOMException && (
+    error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED'
+  );
+}
+
+function newestFirst(a: InspectorCheckpointRecord, b: InspectorCheckpointRecord): number {
+  return b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id);
+}
+
+function isCheckpointRecord(value: unknown): value is InspectorCheckpointRecord {
+  if (!value || typeof value !== 'object') return false;
+  const checkpoint = value as Partial<InspectorCheckpointRecord>;
+  return checkpoint.version === 1 &&
+    typeof checkpoint.id === 'string' &&
+    typeof checkpoint.name === 'string' &&
+    typeof checkpoint.route === 'string' &&
+    typeof checkpoint.createdAt === 'string' &&
+    'state' in checkpoint;
 }

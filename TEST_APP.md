@@ -1,86 +1,48 @@
 # Native Federation checkpoint test app
 
-This workspace includes a shell and two Angular Native Federation remotes for exercising the checkpoint flow.
+The workspace includes a shell and two Angular Native Federation remotes for exercising one shared NgRx root Store.
 
 | Application | Address | Purpose |
-| --- | --- | --- |
-| Shell | http://localhost:4200 | Hosts routing and the checkpoint toolbar |
-| Workflow remote | http://localhost:4201 | Multi-step customer application form |
-| Summary remote | http://localhost:4202 | Displays restored workflow state |
+|---|---|---|
+| Shell | http://localhost:4200 | Owns the root Store, checkpoint provider, routing, and Inspector |
+| Workflow remote | http://localhost:4201 | Dispatches typed workflow actions |
+| Summary remote | http://localhost:4202 | Selects and displays workflow state |
 
-## Prerequisites
+## Start
 
-- Node.js version supported by Angular 17 (Node 18.13+ or Node 20).
-- pnpm installed globally.
-- Three available terminals.
-
-Install workspace dependencies once:
+Install dependencies, then start each app in a separate terminal:
 
 ```bash
 pnpm install --no-frozen-lockfile
-```
-
-## Start the app
-
-Start these commands in three separate terminals from the repository root:
-
-```bash
-# Terminal 1
 pnpm run demo:federation:workflow
-```
-
-```bash
-# Terminal 2
 pnpm run demo:federation:summary
-```
-
-```bash
-# Terminal 3 — start this after both remotes report that they are ready
 pnpm run demo:federation:shell
 ```
 
-The scripts build `inspector-ng` before serving each application. Open [the shell](http://localhost:4200) after all three servers are running.
+Start the shell after both remotes report ready, then open `http://localhost:4200/workflow`.
 
 ## Manual checkpoint test
 
-1. Open `http://localhost:4200/workflow`.
-2. Complete both form steps: customer name, account type, amount, and terms acceptance.
-3. Select **Continue to summary**. Confirm the summary displays your values.
-4. The compact inspector toolbar is visible by default. Open its checkpoint control and save a checkpoint.
-6. Go back to `/workflow` and change the form values, or refresh the browser.
-7. Restore the saved checkpoint. If you disabled the inspector with its power button, press **M** to enable it again.
-8. Confirm that the shell returns to `/summary` and the original values are displayed.
+1. Complete customer name, account type, amount, and terms, then continue to summary.
+2. Use the compact Save checkpoint toolbar button. There is no naming dialog.
+3. Return to the workflow and change the values.
+4. Press `Ctrl/Cmd+Shift+P`, select the saved checkpoint using fuzzy search, and press `Enter`.
+5. Confirm that the original values return and the shell navigates to the route where the checkpoint was saved.
+6. Reload the shell and confirm the checkpoint still appears in the command bar.
 
-The expected restore sequence is: load remote checkpoint adapters → restore registered state → navigate to the saved URL.
+Checkpoint records live per origin in IndexedDB database `inspector-ng`, store `checkpoints`. This requires no permission prompt and has no fixed or configurable filesystem path. Clear them from browser DevTools under **Application → IndexedDB → inspector-ng → checkpoints**, or delete individual records from the command bar.
 
-## Clear saved checkpoints
-
-The federation demo uses this browser local-storage key:
-
-```text
-inspector-ng.checkpoints.federation-demo
-```
-
-To reset the demo, open browser DevTools on `http://localhost:4200`, go to **Application** → **Local Storage**, and delete that key.
+Only JSON-serializable NgRx root state and the current route are captured. Restore applies state and then navigates through Angular Router. HTTP traffic, backend data, component-local state, and NgRx action history remain outside checkpoint scope. Native Redux DevTools Import/Export files do not appear in the searchable catalog, and legacy localStorage records are not migrated.
 
 ## Tests and builds
 
-Build the library, shell, and regular demo:
-
 ```bash
+CHROME_BIN=/usr/bin/chromium pnpm run test:federation
+
 pnpm exec ng build inspector-ng
-pnpm exec ng build shell
-pnpm exec ng build demo
+pnpm exec ng build shell --configuration production
+pnpm exec ng build workflow --configuration production
+pnpm exec ng build summary --configuration production
 ```
 
-Run the federation test suite:
-
-```bash
-pnpm run test:federation
-```
-
-This requires a Chrome/ChromeHeadless binary. If Karma reports `No binary for ChromeHeadless`, install Chrome or set `CHROME_BIN` to the browser executable before running the command.
-
-## Demo architecture note
-
-The shell uses the production `inspector-ng` overlay, checkpoint registry, and RxJS adapter. The path-mapped `@inspector-ng/checkpoints` package supplies only the demo's shared workflow-domain state. Only the shell provides the registry; remotes receive that instance and register namespaced adapters through it.
+Set `CHROME_BIN` to the installed Chrome or Chromium executable when Karma cannot locate it automatically.

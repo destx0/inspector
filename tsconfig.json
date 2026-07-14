@@ -8,8 +8,8 @@
     "noPropertyAccessFromIndexSignature": true,
     "paths": {
       "inspector-ng": ["./projects/inspector-ng/src/public-api.ts"],
-      "@inspector-ng/checkpoints": [
-        "./projects/checkpoint-api/src/public-api.ts"
+      "@inspector-ng/federation-demo-state": [
+        "./projects/federation-demo/src/public-api.ts"
       ]
     },
     "noImplicitReturns": true,

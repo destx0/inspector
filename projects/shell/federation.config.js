@@ -17,8 +17,7 @@ module.exports = withNativeFederation({
     },
   },
 
-  // Share path-mapped demo checkpoint API + inspector-ng so remotes get one instance.
-  sharedMappings: ['inspector-ng', '@inspector-ng/checkpoints'],
+  sharedMappings: ['inspector-ng', '@inspector-ng/federation-demo-state'],
 
   skip: [
     'rxjs/ajax',

@@ -10,7 +10,7 @@
   "include": [
     "src/**/*.spec.ts",
     "src/**/*.d.ts",
-    "../checkpoint-api/src/**/*.spec.ts",
-    "../checkpoint-api/src/**/*.ts"
+    "../federation-demo/src/**/*.spec.ts",
+    "../federation-demo/src/**/*.ts"
   ]
 }

@@ -15,80 +15,19 @@
           <span class="inspector-tooltip" role="tooltip">Select</span>
         </button>
 
-        @if (checkpointRegistry) {
-          <div class="inspector-checkpoint-group">
-            <button
-              type="button"
-              class="inspector-icon-button"
-              [class.is-active]="checkpointsOpen()"
-              (click)="toggleCheckpoints()"
-              aria-label="Checkpoints"
-            >
-              <svg viewBox="0 0 16 16" aria-hidden="true">
-                <path d="M3 2.5h10v11H3zm2 2v2h6v-2zm0 4v2h4v-2z" />
-              </svg>
-              <span class="inspector-tooltip" role="tooltip">Checkpoints</span>
-            </button>
-
-            @if (checkpointsOpen()) {
-              <section class="inspector-checkpoint-panel" aria-label="Saved checkpoints">
-                <header class="inspector-checkpoint-panel__header">
-                  <div>
-                    <strong>Checkpoints</strong>
-                    <span>{{ checkpointRegistry.checkpoints().length }}</span>
-                  </div>
-                  <button
-                    type="button"
-                    class="inspector-checkpoint-save"
-                    (click)="saveCheckpoint()"
-                    [disabled]="checkpointRegistry.isBusy()"
-                  >
-                    {{ checkpointRegistry.isBusy() ? 'Working…' : 'Save current' }}
-                  </button>
-                </header>
-
-                @if (checkpointRegistry.error(); as error) {
-                  <p class="inspector-checkpoint-message inspector-checkpoint-message--error">{{ error }}</p>
-                }
-                @if (checkpointRegistry.warning(); as warning) {
-                  <p class="inspector-checkpoint-message">{{ warning }}</p>
-                }
-
-                @if (checkpointRegistry.checkpoints().length) {
-                  <div class="inspector-checkpoint-list">
-                    @for (checkpoint of checkpointRegistry.checkpoints(); track checkpoint.id) {
-                      <article class="inspector-checkpoint-item">
-                        <div class="inspector-checkpoint-item__main">
-                          @if (editingCheckpointId() === checkpoint.id) {
-                            <input
-                              #checkpointName
-                              class="inspector-checkpoint-name-input"
-                              [value]="checkpoint.name"
-                              (keydown.enter)="finishRename(checkpoint, $event)"
-                              (keydown.escape)="cancelRename()"
-                              (blur)="finishRename(checkpoint, $event)"
-                              aria-label="Checkpoint name"
-                              autofocus
-                            />
-                          } @else {
-                            <button type="button" class="inspector-checkpoint-name" (click)="beginRename(checkpoint)">
-                              {{ checkpoint.name }}
-                            </button>
-                          }
-                        </div>
-                        <div class="inspector-checkpoint-actions">
-                          <button type="button" (click)="restoreCheckpoint(checkpoint)" [disabled]="checkpointRegistry.isBusy()">Restore</button>
-                          <button type="button" (click)="deleteCheckpoint(checkpoint)" [disabled]="checkpointRegistry.isBusy()">Delete</button>
-                        </div>
-                      </article>
-                    }
-                  </div>
-                } @else {
-                  <p class="inspector-checkpoint-empty">No checkpoints yet.</p>
-                }
-              </section>
-            }
-          </div>
+        @if (checkpointService) {
+          <button
+            type="button"
+            class="inspector-icon-button"
+            (click)="saveCheckpoint()"
+            [disabled]="checkpointService.busy()"
+            aria-label="Save checkpoint"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M2.5 2h9.6l1.4 1.4V14h-11zm2 1.5v3h6v-3zm.5 6V12h6V9.5z" />
+            </svg>
+            <span class="inspector-tooltip" role="tooltip">Save checkpoint</span>
+          </button>
         }
 
         <div class="inspector-toolbar__secondary">
@@ -150,6 +89,104 @@
         </button>
       </div>
     </div>
+  }
+
+  @if (checkpointService) {
+    <dialog
+      #checkpointDialog
+      class="inspector-command-dialog"
+      aria-labelledby="inspector-command-title"
+      (cancel)="$event.preventDefault(); closeCheckpointCommandBar()"
+      (click)="handleCheckpointDialogClick($event)"
+    >
+      <section class="inspector-command" (click)="$event.stopPropagation()">
+        <header class="inspector-command__search">
+          <label id="inspector-command-title" class="inspector-visually-hidden" for="inspector-checkpoint-search">
+            Search checkpoints
+          </label>
+          <input
+            #checkpointSearch
+            id="inspector-checkpoint-search"
+            type="search"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="Find a checkpoint…"
+            [value]="checkpointQuery()"
+            [attr.aria-controls]="'inspector-checkpoint-results'"
+            [attr.aria-activedescendant]="filteredCheckpoints().length ? 'inspector-checkpoint-' + filteredCheckpoints()[activeCheckpointIndex()].id : null"
+            (input)="updateCheckpointQuery($event)"
+          />
+        </header>
+
+        @if (checkpointService.error(); as error) {
+          <p class="inspector-command__message inspector-command__message--error" role="alert">{{ error }}</p>
+        }
+
+        <div id="inspector-checkpoint-results" class="inspector-command__results" role="listbox" aria-label="Saved checkpoints">
+          @if (checkpointService.loading()) {
+            <p class="inspector-command__message" role="status">Loading checkpoints…</p>
+          } @else if (!checkpointService.checkpoints().length) {
+            <p class="inspector-command__message" role="status">No checkpoints yet. Save one from the Inspector toolbar.</p>
+          } @else if (!filteredCheckpoints().length) {
+            <p class="inspector-command__message" role="status">No checkpoint matches “{{ checkpointQuery() }}”.</p>
+          } @else {
+            @for (checkpoint of filteredCheckpoints(); track checkpoint.id; let index = $index) {
+              <div
+                class="inspector-command-row"
+                role="option"
+                [id]="'inspector-checkpoint-' + checkpoint.id"
+                [attr.data-checkpoint-index]="index"
+                [attr.aria-selected]="activeCheckpointIndex() === index"
+                [class.is-active]="activeCheckpointIndex() === index"
+                [class.is-busy]="checkpointService.busy() && activeCheckpointIndex() === index"
+                (mouseenter)="setActiveCheckpoint(index)"
+                (click)="deletingCheckpointId() === checkpoint.id || editingCheckpointId() === checkpoint.id ? null : restoreCheckpoint(checkpoint)"
+              >
+                @if (deletingCheckpointId() === checkpoint.id) {
+                  <span class="inspector-command-row__confirm">Delete “{{ checkpoint.name }}”?</span>
+                  <span class="inspector-command-row__confirm-actions">
+                    <button type="button" class="is-danger" (click)="confirmDelete(checkpoint, $event)">Delete checkpoint</button>
+                    <button type="button" (click)="cancelDelete($event)">Keep checkpoint</button>
+                  </span>
+                } @else if (editingCheckpointId() === checkpoint.id) {
+                  <input
+                    class="inspector-command-row__rename"
+                    aria-label="Checkpoint name"
+                    [value]="renameDraft()"
+                    (input)="updateRenameDraft($event)"
+                    (click)="$event.stopPropagation()"
+                  />
+                } @else {
+                  <span class="inspector-command-row__name">
+                    @if (checkpointService.busy() && activeCheckpointIndex() === index) {
+                      Restoring “{{ checkpoint.name }}”…
+                    } @else {
+                      {{ checkpoint.name }}
+                    }
+                  </span>
+                  <span class="inspector-command-row__actions">
+                    <button type="button" (click)="beginRename(checkpoint, $event)" [attr.aria-label]="'Rename ' + checkpoint.name">
+                      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="m11.8 1.8 2.4 2.4-8.3 8.3-3.1.7.7-3.1zm-8 10.4 1.5-.3-1.2-1.2z" /></svg>
+                    </button>
+                    <button type="button" (click)="beginDelete(checkpoint, $event)" [attr.aria-label]="'Delete ' + checkpoint.name">
+                      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 2h5l.5 1H14v1.25H2V3h3zm-2 3.25h9L12 14H4z" /></svg>
+                    </button>
+                  </span>
+                }
+              </div>
+            }
+          }
+        </div>
+      </section>
+    </dialog>
+  }
+
+  @if (checkpointToast(); as toast) {
+    <p
+      class="inspector-checkpoint-toast"
+      [class.inspector-checkpoint-toast--error]="checkpointToastIsError()"
+      [attr.role]="checkpointToastIsError() ? 'alert' : 'status'"
+    >{{ toast }}</p>
   }
 
   @if (enabled() && toolMode() === "select") {

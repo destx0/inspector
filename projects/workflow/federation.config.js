@@ -8,8 +8,6 @@ module.exports = withNativeFederation({
 
   exposes: {
     './Routes': './projects/workflow/src/app/routes.ts',
-    './CheckpointAdapters':
-      './projects/workflow/src/app/checkpoint-adapters.ts',
     './Component': './projects/workflow/src/app/app.component.ts',
   },
 
@@ -26,7 +24,7 @@ module.exports = withNativeFederation({
     },
   },
 
-  sharedMappings: ['inspector-ng', '@inspector-ng/checkpoints'],
+  sharedMappings: ['inspector-ng', '@inspector-ng/federation-demo-state'],
 
   skip: [
     'rxjs/ajax',

@@ -7,17 +7,16 @@ import { RouterLink } from '@angular/router';
   imports: [RouterLink],
   template: `
     <section class="page">
-      <h1>inspector-ng checkpoint federation demo</h1>
+      <h1>inspector-ng NgRx checkpoint demo</h1>
       <p>
-        Shell hosts checkpoints. Workflow and summary remotes register adapters
-        against the shell registry.
+        One shell-owned NgRx store flows through the workflow and summary remotes.
       </p>
       <ol>
         <li>Open <a routerLink="/workflow">/workflow</a> and complete the form.</li>
         <li>Continue to <a routerLink="/summary">/summary</a>.</li>
-        <li>Save a checkpoint from the inspector toolbar (bottom-right).</li>
-        <li>Change values or refresh, then restore the checkpoint.</li>
-        <li>Confirm navigation to /summary with the original form values.</li>
+        <li>Save from the Inspector toolbar in the top-right.</li>
+        <li>Change the values, then press <kbd>Ctrl/Cmd + Shift + P</kbd>.</li>
+        <li>Fuzzy-search the saved name and press Enter to restore it.</li>
       </ol>
     </section>
   `,

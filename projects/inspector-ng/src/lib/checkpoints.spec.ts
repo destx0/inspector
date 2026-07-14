@@ -1,212 +1,205 @@
+import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { BehaviorSubject } from 'rxjs';
+import { Action, Store, provideStore } from '@ngrx/store';
+import { firstValueFrom, take } from 'rxjs';
 
 import {
-  InspectorCheckpointRegistry,
-  createBehaviorSubjectCheckpointAdapter,
+  INSPECTOR_CHECKPOINT_REPOSITORY,
+  IndexedDbCheckpointRepository,
+  InspectorCheckpointRecord,
+  InspectorCheckpointRepository,
+  InspectorCheckpointService,
+  inspectorCheckpointMetaReducer,
+  nextAutomaticName,
+  provideInspectorCheckpoints,
 } from './checkpoints';
 
-describe('InspectorCheckpointRegistry', () => {
-  let router: jasmine.SpyObj<Router>;
-  let registry: InspectorCheckpointRegistry;
+interface TestState {
+  count: number;
+  value?: unknown;
+}
 
-  beforeEach(() => {
-    window.localStorage.clear();
-    router = jasmine.createSpyObj<Router>('Router', ['navigateByUrl'], { url: '/summary?view=full' });
-    router.navigateByUrl.and.resolveTo(true);
-    registry = new InspectorCheckpointRegistry('browser' as unknown as object, router);
-  });
+class MemoryCheckpointRepository extends InspectorCheckpointRepository {
+  records: InspectorCheckpointRecord[] = [];
+  failure: Error | null = null;
 
-  function registryFor(url: string): InspectorCheckpointRegistry {
-    const routeRouter = jasmine.createSpyObj<Router>('Router', ['navigateByUrl'], { url });
-    routeRouter.navigateByUrl.and.resolveTo(true);
-    return new InspectorCheckpointRegistry('browser' as unknown as object, routeRouter);
+  async list(): Promise<InspectorCheckpointRecord[]> {
+    if (this.failure) throw this.failure;
+    return structuredClone(this.records);
   }
 
-  it('uses the route path without its query as the automatic name', async () => {
-    expect((await registry.save())?.name).toBe('/summary');
-  });
+  async put(checkpoint: InspectorCheckpointRecord): Promise<void> {
+    if (this.failure) throw this.failure;
+    this.records = [checkpoint, ...this.records.filter(({ id }) => id !== checkpoint.id)];
+  }
 
-  it('allocates sequential automatic names for repeated saves', async () => {
-    await registry.save();
-    await registry.save();
-    await registry.save();
+  async delete(id: string): Promise<void> {
+    if (this.failure) throw this.failure;
+    this.records = this.records.filter((checkpoint) => checkpoint.id !== id);
+  }
+}
 
-    expect(registry.checkpoints().map(({ name }) => name)).toEqual([
-      '/summary 3', '/summary 2', '/summary',
-    ]);
-  });
+function reducer(state: TestState = { count: 0 }, action: Action & { value?: unknown }): TestState {
+  if (action.type === 'increment') return { ...state, count: state.count + 1 };
+  if (action.type === 'set-value') return { ...state, value: action.value };
+  return state;
+}
 
-  it('fills the next available numeric name without colliding with custom names', async () => {
-    await registry.save('/summary');
-    await registry.save('/summary 3');
+describe('NgRx checkpoints', () => {
+  let repository: MemoryCheckpointRepository;
+  let service: InspectorCheckpointService;
+  let store: Store<{ test: TestState }>;
+  let router: jasmine.SpyObj<Router>;
 
-    expect((await registry.save())?.name).toBe('/summary 2');
-  });
-
-  it('uses slash for the root route', async () => {
-    expect((await registryFor('/?view=full#details').save())?.name).toBe('/');
-  });
-
-  it('excludes both hashes and queries from automatic names', async () => {
-    expect((await registryFor('/orders/42?tab=all#details').save())?.name).toBe('/orders/42');
-  });
-
-  it('keeps explicitly supplied names and manual renames', async () => {
-    const checkpoint = await registry.save('Summary ready');
-    expect(checkpoint?.name).toBe('Summary ready');
-
-    registry.rename(checkpoint!.id, 'Reviewed summary');
-    expect(registry.checkpoints()[0].name).toBe('Reviewed summary');
-  });
-
-  it('normalizes legacy automatic names oldest-first and persists them', () => {
-    const oldestAt = '2024-01-01T10:00:00.000Z';
-    const newestAt = '2024-01-02T10:00:00.000Z';
-    const legacy = (id: string, createdAt: string) => ({
-      version: 1 as const,
-      id,
-      name: `/summary · ${new Date(createdAt).toLocaleString()}`,
-      url: '/summary?view=full',
-      createdAt,
-      scopes: [],
-      state: {},
-      sizeBytes: 100,
+  beforeEach(() => {
+    repository = new MemoryCheckpointRepository();
+    router = jasmine.createSpyObj<Router>('Router', ['navigateByUrl']);
+    router.navigateByUrl.and.resolveTo(true);
+    TestBed.configureTestingModule({
+      providers: [
+        provideStore({ test: reducer }),
+        provideInspectorCheckpoints(),
+        { provide: INSPECTOR_CHECKPOINT_REPOSITORY, useValue: repository },
+        { provide: Router, useValue: router },
+      ],
     });
-    window.localStorage.setItem('inspector-checkpoints-v1', JSON.stringify([
-      legacy('newest', newestAt),
-      { ...legacy('custom', '2024-01-03T10:00:00.000Z'), name: 'Release candidate' },
-      legacy('oldest', oldestAt),
-    ]));
-
-    const hydrated = registryFor('/');
-
-    expect(hydrated.checkpoints().map(({ name }) => name)).toEqual([
-      'Release candidate', '/summary 2', '/summary',
-    ]);
-    const persisted = JSON.parse(window.localStorage.getItem('inspector-checkpoints-v1')!);
-    expect(persisted.map(({ name }: { name: string }) => name)).toEqual([
-      'Release candidate', '/summary 2', '/summary',
-    ]);
+    service = TestBed.inject(InspectorCheckpointService);
+    store = TestBed.inject(Store);
   });
 
-  it('requires namespaced adapter IDs', () => {
-    expect(() => registry.register({
-      id: 'application',
-      capture: () => null,
-      restore: () => undefined,
-    })).toThrowError(/namespaced/);
+  it('captures JSON state and restores it through the root meta-reducer', async () => {
+    store.dispatch({ type: 'increment' });
+    const checkpoint = await service.save();
+    store.dispatch({ type: 'increment' });
+
+    expect((await firstValueFrom(store.pipe(take(1)))).test.count).toBe(2);
+    expect(await service.restore(checkpoint!.id)).toBeTrue();
+    expect((await firstValueFrom(store.pipe(take(1)))).test.count).toBe(1);
+    expect(router.navigateByUrl).toHaveBeenCalledWith(checkpoint!.route);
   });
 
-  it('allows a remote bridge to register an adapter repeatedly', () => {
-    const adapter = {
-      id: 'workflow:application',
-      capture: () => null,
-      restore: () => undefined,
+  it('navigates to the saved route after restoring the root state', async () => {
+    repository.records = [{
+      version: 1,
+      id: 'summary',
+      name: '/summary',
+      route: '/summary?mode=review#details',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      state: { test: { count: 7 } },
+    }];
+
+    expect(await service.restore('summary')).toBeTrue();
+    expect((await firstValueFrom(store.pipe(take(1)))).test.count).toBe(7);
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/summary?mode=review#details');
+  });
+
+  it('rejects a root state that cannot be JSON serialized', async () => {
+    const circular: { self?: unknown } = {};
+    circular.self = circular;
+    store.dispatch({ type: 'set-value', value: circular });
+
+    expect(await service.save()).toBeNull();
+    expect(service.error()).toContain('not JSON-serializable');
+    expect(repository.records).toEqual([]);
+  });
+
+  it('renames uniquely and deletes without changing other records', async () => {
+    const first = await service.save();
+    const second = await service.save();
+
+    expect(await service.rename(first!.id, 'Ready')).toBeTrue();
+    expect(await service.rename(second!.id, 'ready')).toBeFalse();
+    expect(service.error()).toContain('already exists');
+    expect(await service.delete(first!.id)).toBeTrue();
+    expect(repository.records.map(({ id }) => id)).toEqual([second!.id]);
+  });
+
+  it('reports repository failures without deleting existing data', async () => {
+    repository.records = [{
+      version: 1,
+      id: 'kept',
+      name: '/kept',
+      route: '/kept',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      state: { count: 1 },
+    }];
+    repository.failure = new Error('database unavailable');
+
+    expect(await service.save()).toBeNull();
+    expect(service.error()).toContain('database unavailable');
+    expect(repository.records.length).toBe(1);
+  });
+
+  it('reports quota failures without evicting existing records', async () => {
+    repository.records = [{
+      version: 1,
+      id: 'kept',
+      name: '/kept',
+      route: '/kept',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      state: { count: 1 },
+    }];
+    repository.failure = new DOMException('full', 'QuotaExceededError');
+
+    expect(await service.save()).toBeNull();
+    expect(service.error()).toContain('Browser storage is full');
+    expect(repository.records.map(({ id }) => id)).toEqual(['kept']);
+  });
+
+  it('loads records newest first', async () => {
+    repository.records = [
+      { version: 1, id: 'old', name: 'Old', route: '/', createdAt: '2026-01-01T00:00:00.000Z', state: {} },
+      { version: 1, id: 'new', name: 'New', route: '/', createdAt: '2026-01-02T00:00:00.000Z', state: {} },
+    ];
+
+    await service.load();
+    expect(service.checkpoints().map(({ id }) => id)).toEqual(['new', 'old']);
+  });
+});
+
+describe('checkpoint helpers', () => {
+  it('allocates the first free route-based name case-insensitively', () => {
+    expect(nextAutomaticName('/summary', ['/SUMMARY', '/summary 3'])).toBe('/summary 2');
+  });
+
+  it('replaces state only for the Inspector restore action', () => {
+    const base = jasmine.createSpy('base').and.returnValue({ count: 2 });
+    const wrapped = inspectorCheckpointMetaReducer(base);
+
+    expect(wrapped({ count: 1 }, { type: 'ordinary' })).toEqual({ count: 2 });
+    expect(wrapped({ count: 1 }, {
+      type: '[Inspector Checkpoints] Restore',
+      state: { count: 9 },
+    } as Action)).toEqual({ count: 9 });
+  });
+});
+
+describe('checkpoint provider without a root Store', () => {
+  it('reports the provider ordering problem instead of throwing during injection', async () => {
+    TestBed.configureTestingModule({ providers: [provideInspectorCheckpoints()] });
+    const service = TestBed.inject(InspectorCheckpointService);
+
+    expect(await service.save()).toBeNull();
+    expect(service.error()).toContain('registered after provideStore()');
+  });
+});
+
+describe('IndexedDbCheckpointRepository', () => {
+  it('persists, lists, and deletes version-one records', async () => {
+    const repository = new IndexedDbCheckpointRepository('browser' as unknown as object);
+    const record: InspectorCheckpointRecord = {
+      version: 1,
+      id: `spec-${Date.now()}-${Math.random()}`,
+      name: 'IndexedDB spec',
+      route: '/',
+      createdAt: new Date().toISOString(),
+      state: { count: 7 },
     };
-    registry.register(adapter);
 
-    expect(() => registry.register(adapter)).not.toThrow();
-  });
-
-  it('restores state before navigating', async () => {
-    const order: string[] = [];
-    registry.register({
-      id: 'workflow:application',
-      capture: () => ({ customerName: 'Ada' }),
-      restore: () => {
-        order.push('restore');
-      },
-    });
-    router.navigateByUrl.and.callFake(async () => {
-      order.push('navigate');
-      return true;
-    });
-
-    const checkpoint = await registry.save('Summary ready');
-    await registry.restore(checkpoint!.id);
-
-    expect(order).toEqual(['restore', 'navigate']);
-    expect(router.navigateByUrl).toHaveBeenCalledWith('/summary?view=full');
-  });
-
-  it('loads a remote scope before restoring its adapter', async () => {
-    const state = new BehaviorSubject({ customerName: 'Before' });
-    registry.register(createBehaviorSubjectCheckpointAdapter('workflow:application', state));
-    const checkpoint = await registry.save();
-    state.next({ customerName: 'Changed' });
-
-    const unregister = registry.register({
-      id: 'summary:filters',
-      capture: () => ({ compact: false }),
-      restore: () => undefined,
-    });
-    state.next({ customerName: 'Before' });
-    const withSummary = await registry.save();
-    state.next({ customerName: 'Changed' });
-    unregister();
-    let loaderCalled = false;
-    registry.registerRemoteScope('summary', () => {
-      loaderCalled = true;
-      registry.register({
-        id: 'summary:filters',
-        capture: () => ({ compact: false }),
-        restore: () => undefined,
-      });
-    });
-
-    await registry.restore(withSummary!.id);
-
-    expect(checkpoint).not.toBeNull();
-    expect(loaderCalled).toBeTrue();
-    expect(state.value).toEqual({ customerName: 'Before' });
-  });
-
-  it('persists BehaviorSubject values through the helper', async () => {
-    const state = new BehaviorSubject({ amount: 2500, acceptedTerms: true });
-    registry.register(createBehaviorSubjectCheckpointAdapter('workflow:application', state));
-
-    const checkpoint = await registry.save();
-    state.next({ amount: 0, acceptedTerms: false });
-    await registry.restore(checkpoint!.id);
-
-    expect(state.value).toEqual({ amount: 2500, acceptedTerms: true });
-  });
-
-  it('skips unavailable adapters and reports a warning', async () => {
-    const unregister = registry.register({
-      id: 'workflow:application',
-      capture: () => ({ customerName: 'Ada' }),
-      restore: () => undefined,
-    });
-    const checkpoint = await registry.save();
-    unregister();
-
-    await registry.restore(checkpoint!.id);
-
-    expect(registry.warning()).toContain('workflow:application');
-    expect(router.navigateByUrl).toHaveBeenCalled();
-  });
-
-  it('evicts the oldest checkpoint when storage is full', async () => {
-    registry.register({
-      id: 'workflow:application',
-      capture: () => ({ customerName: 'Ada' }),
-      restore: () => undefined,
-    });
-    const first = await registry.save('First');
-    const realSetItem = window.localStorage.setItem.bind(window.localStorage);
-    spyOn(window.localStorage, 'setItem').and.callFake((key: string, value: string) => {
-      if (JSON.parse(value).length > 1) {
-        throw new DOMException('Storage full', 'QuotaExceededError');
-      }
-      realSetItem(key, value);
-    });
-
-    const second = await registry.save('Second');
-
-    expect(registry.checkpoints().map((checkpoint) => checkpoint.id)).toEqual([second!.id]);
-    expect(registry.checkpoints().map((checkpoint) => checkpoint.id)).not.toContain(first!.id);
-    expect(registry.warning()).toContain('oldest checkpoint');
+    await repository.put(record);
+    const reloadedRepository = new IndexedDbCheckpointRepository('browser' as unknown as object);
+    expect((await reloadedRepository.list()).some(({ id }) => id === record.id)).toBeTrue();
+    await repository.delete(record.id);
+    expect((await repository.list()).some(({ id }) => id === record.id)).toBeFalse();
   });
 });

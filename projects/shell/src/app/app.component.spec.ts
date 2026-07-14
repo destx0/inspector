@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideState, provideStore } from '@ngrx/store';
 import { provideInspectorCheckpoints } from 'inspector-ng';
+import { workflowFeature } from '@inspector-ng/federation-demo-state';
 import { AppComponent } from './app.component';
 
 describe('AppComponent (shell)', () => {
@@ -9,6 +11,8 @@ describe('AppComponent (shell)', () => {
       imports: [AppComponent],
       providers: [
         provideRouter([]),
+        provideStore(),
+        provideState(workflowFeature),
         provideInspectorCheckpoints(),
       ],
     }).compileComponents();

@@ -106,10 +106,10 @@ pnpm ng build inspector-ng
 npm pack ./dist/inspector-ng
 ```
 
-The second command creates a file such as `inspector-ng-0.0.6.tgz`. Install that file in another Angular project:
+The second command creates a file such as `inspector-ng-0.0.8.tgz`. Install that file in another Angular project:
 
 ```bash
-npm install /absolute/path/to/inspector-ng-0.0.6.tgz
+npm install /absolute/path/to/inspector-ng-0.0.8.tgz
 ```
 
 This tests the same package contents users receive from npm.
@@ -147,42 +147,33 @@ Example:
 | `Ctrl/Cmd + Z` | Undo a guide change |
 | `Ctrl/Cmd + Shift + Z` | Redo a guide change |
 | `Backspace` / `Delete` | Delete the selected guide |
+| `Ctrl/Cmd + Shift + P` | Find and restore a saved NgRx checkpoint (when checkpoint providers are installed) |
 
-## Optional state checkpoints
+## Optional NgRx checkpoints
 
-Checkpoints save the Angular Router URL and, through Redux DevTools, the complete state of every connected Redux/NgRx store in the shell and its microfrontends.
-
-Install the hook in the shell entry point before federation starts:
-
-```ts
-import { initFederation } from '@angular-architects/native-federation';
-import { installInspectorReduxDevToolsHook } from 'inspector-ng';
-
-installInspectorReduxDevToolsHook();
-
-initFederation('/assets/federation.manifest.json')
-  .then(() => import('./bootstrap'))
-  .catch(console.error);
-```
-
-Redux DevTools must be installed and every store must have its normal Redux DevTools/NgRx Store DevTools connection enabled. Only connections created after the hook is installed are captured.
-
-Add the provider to `app.config.ts`:
+Install `@ngrx/store`, then provide one root Store followed by the checkpoint provider:
 
 ```ts
 import { ApplicationConfig } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { provideStore } from '@ngrx/store';
 import { provideInspectorCheckpoints } from 'inspector-ng';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
-  providers: [provideRouter(routes), provideInspectorCheckpoints()],
+  providers: [
+    provideRouter(routes),
+    provideStore(),
+    provideInspectorCheckpoints(),
+  ],
 };
 ```
 
-`provideInspectorCheckpoints()` automatically registers one `application:redux-devtools` adapter. No checkpoint adapters are needed in individual remotes. Load all remotes before restoring; the inspector sends `JUMP_TO_STATE` to every captured store and then restores the URL.
+The Inspector toolbar now shows one Save checkpoint button. Saving captures a JSON-serializable clone of the current NgRx root state and gives it a route-based name such as `/summary 2`. Press `Ctrl/Cmd+Shift+P` anywhere in the application—even when an input is focused or the Inspector rail is disabled—to fuzzy-search, restore, rename, or delete saved checkpoints.
 
-Give every DevTools connection a stable, unique name. State must be JSON-serializable. Checkpoints are stored in `localStorage` and do not capture HTTP traffic or backend state.
+Checkpoints live in the `inspector-ng` IndexedDB database for the current browser origin. Browser storage needs no permission prompt, has no fixed or configurable filesystem path, is not shared across origins, and is kept until the user deletes it or clears site data. Existing `inspector-checkpoints-v1` localStorage records are not migrated.
+
+Only the current NgRx root state and route are captured. Restore replaces the Store state first, then navigates through Angular Router to the saved route. It does not replay actions, restore component-local state, replay HTTP calls, or change backend data. Redux DevTools observes restore as a normal `[Inspector Checkpoints] Restore` action. Its native Import/Export files remain separate from the searchable Inspector catalog.
 
 ## Publish to npm
 
