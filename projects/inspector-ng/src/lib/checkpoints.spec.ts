@@ -146,14 +146,27 @@ describe('NgRx checkpoints', () => {
     expect(repository.records.map(({ id }) => id)).toEqual(['kept']);
   });
 
-  it('loads records newest first', async () => {
+  it('loads records by their most recent save or restore activity', async () => {
     repository.records = [
-      { version: 1, id: 'old', name: 'Old', route: '/', createdAt: '2026-01-01T00:00:00.000Z', state: {} },
+      { version: 1, id: 'old', name: 'Old', route: '/', createdAt: '2026-01-01T00:00:00.000Z', lastUsedAt: '2026-01-03T00:00:00.000Z', state: {} },
       { version: 1, id: 'new', name: 'New', route: '/', createdAt: '2026-01-02T00:00:00.000Z', state: {} },
     ];
 
     await service.load();
-    expect(service.checkpoints().map(({ id }) => id)).toEqual(['new', 'old']);
+    expect(service.checkpoints().map(({ id }) => id)).toEqual(['old', 'new']);
+  });
+
+  it('records a successful restore as the latest activity', async () => {
+    repository.records = [
+      { version: 1, id: 'older', name: 'Older', route: '/', createdAt: '2026-01-01T00:00:00.000Z', state: {} },
+      { version: 1, id: 'newer', name: 'Newer', route: '/', createdAt: '2026-01-02T00:00:00.000Z', state: {} },
+    ];
+
+    await service.load();
+    expect(await service.restore('older')).toBeTrue();
+
+    expect(service.checkpoints().map(({ id }) => id)).toEqual(['older', 'newer']);
+    expect(repository.records.find(({ id }) => id === 'older')?.lastUsedAt).toBeDefined();
   });
 });
 

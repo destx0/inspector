@@ -1,8 +1,13 @@
 import { InspectorCheckpointRecord } from './checkpoints';
 import { fuzzyCheckpoints, fuzzyScore } from './checkpoint-search';
 
-function checkpoint(id: string, name: string, createdAt: string): InspectorCheckpointRecord {
-  return { version: 1, id, name, route: '/', createdAt, state: {} };
+function checkpoint(
+  id: string,
+  name: string,
+  createdAt: string,
+  lastUsedAt?: string,
+): InspectorCheckpointRecord {
+  return { version: 1, id, name, route: '/', createdAt, lastUsedAt, state: {} };
 }
 
 describe('checkpoint fuzzy search', () => {
@@ -28,6 +33,13 @@ describe('checkpoint fuzzy search', () => {
     expect(fuzzyCheckpoints(records, '').map(({ id }) => id)).toEqual([
       'prefix', 'substring', 'subsequence', 'exact',
     ]);
+  });
+
+  it('promotes a recently used checkpoint above a newer saved checkpoint', () => {
+    const active = checkpoint('active', 'Active', '2026-01-01T00:00:00.000Z', '2026-01-05T00:00:00.000Z');
+    const saved = checkpoint('saved', 'Saved', '2026-01-04T00:00:00.000Z');
+
+    expect(fuzzyCheckpoints([saved, active], '').map(({ id }) => id)).toEqual(['active', 'saved']);
   });
 
   it('returns no result when the ordered subsequence is absent', () => {

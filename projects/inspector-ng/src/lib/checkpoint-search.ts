@@ -1,4 +1,7 @@
-import { InspectorCheckpointRecord } from './checkpoints';
+import {
+  InspectorCheckpointRecord,
+  recentActivityFirst,
+} from './checkpoints';
 
 interface RankedCheckpoint {
   checkpoint: InspectorCheckpointRecord;
@@ -10,7 +13,7 @@ export function fuzzyCheckpoints(
   query: string,
 ): InspectorCheckpointRecord[] {
   const normalizedQuery = normalize(query.trim());
-  if (!normalizedQuery) return [...checkpoints].sort(newestFirst);
+  if (!normalizedQuery) return [...checkpoints].sort(recentActivityFirst);
 
   return checkpoints
     .map((checkpoint): RankedCheckpoint | null => {
@@ -18,7 +21,7 @@ export function fuzzyCheckpoints(
       return score === null ? null : { checkpoint, score };
     })
     .filter((item): item is RankedCheckpoint => item !== null)
-    .sort((a, b) => b.score - a.score || newestFirst(a.checkpoint, b.checkpoint))
+    .sort((a, b) => b.score - a.score || recentActivityFirst(a.checkpoint, b.checkpoint))
     .map(({ checkpoint }) => checkpoint);
 }
 
@@ -50,8 +53,4 @@ function normalize(value: string): string {
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLocaleLowerCase();
-}
-
-function newestFirst(a: InspectorCheckpointRecord, b: InspectorCheckpointRecord): number {
-  return b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id);
 }

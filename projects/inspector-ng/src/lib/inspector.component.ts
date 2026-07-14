@@ -40,11 +40,12 @@ import {
   ToolMode,
 } from './types';
 import {
+  checkpointActivityAt,
   InspectorCheckpointRecord,
   InspectorCheckpointService,
 } from './checkpoints';
 import { fuzzyCheckpoints } from './checkpoint-search';
-import { createId, formatValue } from './utils';
+import { createId, formatRelativeTime, formatValue } from './utils';
 
 @Component({
   selector: 'inspector-overlay',
@@ -56,7 +57,9 @@ import { createId, formatValue } from './utils';
 })
 export class inspectorComponent implements OnDestroy {
   readonly Math = Math;
+  readonly checkpointActivityAt = checkpointActivityAt;
   readonly formatValue = formatValue;
+  readonly formatRelativeTime = formatRelativeTime;
   readonly guideHitboxSize = GUIDE_HITBOX_SIZE;
   readonly overlayRoot = viewChild<ElementRef<HTMLElement>>('overlayRoot');
   readonly checkpointDialog = viewChild<ElementRef<HTMLDialogElement>>('checkpointDialog');

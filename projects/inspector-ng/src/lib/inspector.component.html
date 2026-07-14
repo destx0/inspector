@@ -104,13 +104,16 @@
           <label id="inspector-command-title" class="inspector-visually-hidden" for="inspector-checkpoint-search">
             Search checkpoints
           </label>
+          <svg class="inspector-command__search-icon" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M7 2.25a4.75 4.75 0 1 0 2.94 8.48l2.91 2.92.8-.8-2.92-2.91A4.75 4.75 0 0 0 7 2.25Zm-3.62 4.75a3.62 3.62 0 1 1 7.24 0 3.62 3.62 0 0 1-7.24 0Z" />
+          </svg>
           <input
             #checkpointSearch
             id="inspector-checkpoint-search"
             type="search"
             autocomplete="off"
             spellcheck="false"
-            placeholder="Find a checkpoint…"
+            placeholder="Search checkpoints…"
             [value]="checkpointQuery()"
             [attr.aria-controls]="'inspector-checkpoint-results'"
             [attr.aria-activedescendant]="filteredCheckpoints().length ? 'inspector-checkpoint-' + filteredCheckpoints()[activeCheckpointIndex()].id : null"
@@ -124,11 +127,11 @@
 
         <div id="inspector-checkpoint-results" class="inspector-command__results" role="listbox" aria-label="Saved checkpoints">
           @if (checkpointService.loading()) {
-            <p class="inspector-command__message" role="status">Loading checkpoints…</p>
+            <p class="inspector-command__message" role="status">Loading…</p>
           } @else if (!checkpointService.checkpoints().length) {
-            <p class="inspector-command__message" role="status">No checkpoints yet. Save one from the Inspector toolbar.</p>
+            <p class="inspector-command__message" role="status">No checkpoints yet</p>
           } @else if (!filteredCheckpoints().length) {
-            <p class="inspector-command__message" role="status">No checkpoint matches “{{ checkpointQuery() }}”.</p>
+            <p class="inspector-command__message" role="status">No matches</p>
           } @else {
             @for (checkpoint of filteredCheckpoints(); track checkpoint.id; let index = $index) {
               <div
@@ -145,8 +148,8 @@
                 @if (deletingCheckpointId() === checkpoint.id) {
                   <span class="inspector-command-row__confirm">Delete “{{ checkpoint.name }}”?</span>
                   <span class="inspector-command-row__confirm-actions">
-                    <button type="button" class="is-danger" (click)="confirmDelete(checkpoint, $event)">Delete checkpoint</button>
-                    <button type="button" (click)="cancelDelete($event)">Keep checkpoint</button>
+                    <button type="button" class="is-danger" (click)="confirmDelete(checkpoint, $event)">Delete</button>
+                    <button type="button" (click)="cancelDelete($event)">Keep</button>
                   </span>
                 } @else if (editingCheckpointId() === checkpoint.id) {
                   <input
@@ -157,12 +160,21 @@
                     (click)="$event.stopPropagation()"
                   />
                 } @else {
-                  <span class="inspector-command-row__name">
-                    @if (checkpointService.busy() && activeCheckpointIndex() === index) {
-                      Restoring “{{ checkpoint.name }}”…
-                    } @else {
-                      {{ checkpoint.name }}
-                    }
+                  <span class="inspector-command-row__content">
+                    <span class="inspector-command-row__name">
+                      @if (checkpointService.busy() && activeCheckpointIndex() === index) {
+                        Restoring…
+                      } @else {
+                        {{ checkpoint.name }}
+                      }
+                    </span>
+                    <span class="inspector-command-row__meta">
+                      <span class="inspector-command-row__route">{{ checkpoint.route || '/' }}</span>
+                      <span class="inspector-command-row__separator" aria-hidden="true">·</span>
+                      <span class="inspector-command-row__activity">
+                        {{ checkpoint.lastUsedAt ? 'Used' : 'Saved' }} {{ formatRelativeTime(checkpointActivityAt(checkpoint)) }}
+                      </span>
+                    </span>
                   </span>
                   <span class="inspector-command-row__actions">
                     <button type="button" (click)="beginRename(checkpoint, $event)" [attr.aria-label]="'Rename ' + checkpoint.name">
@@ -177,6 +189,7 @@
             }
           }
         </div>
+
       </section>
     </dialog>
   }

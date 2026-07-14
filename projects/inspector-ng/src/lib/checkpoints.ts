@@ -24,6 +24,7 @@ export interface InspectorCheckpointRecord {
   name: string;
   route: string;
   createdAt: string;
+  lastUsedAt?: string;
   state: unknown;
 }
 
@@ -72,7 +73,7 @@ export class IndexedDbCheckpointRepository extends InspectorCheckpointRepository
     );
     return values
       .filter(isCheckpointRecord)
-      .sort(newestFirst);
+      .sort(recentActivityFirst);
   }
 
   async put(checkpoint: InspectorCheckpointRecord): Promise<void> {
@@ -147,7 +148,7 @@ export class InspectorCheckpointService {
     this.error.set(null);
     this.loading.set(true);
     try {
-      this.checkpoints.set((await this.repository.list()).sort(newestFirst));
+      this.checkpoints.set((await this.repository.list()).sort(recentActivityFirst));
     } catch (error) {
       this.error.set(this.messageFor(error, 'Saved checkpoints could not be loaded. Try reloading the page.'));
     } finally {
@@ -178,7 +179,7 @@ export class InspectorCheckpointService {
         state,
       };
       await this.repository.put(checkpoint);
-      this.checkpoints.set([checkpoint, ...persisted].sort(newestFirst));
+      this.checkpoints.set([checkpoint, ...persisted].sort(recentActivityFirst));
       return checkpoint;
     } catch (error) {
       this.error.set(this.storageMessage(error, 'The checkpoint could not be saved.'));
@@ -196,7 +197,8 @@ export class InspectorCheckpointService {
     }
     this.busy.set(true);
     try {
-      const checkpoint = (await this.repository.list()).find((item) => item.id === id);
+      const checkpoints = await this.repository.list();
+      const checkpoint = checkpoints.find((item) => item.id === id);
       if (!checkpoint) throw new Error('Checkpoint not found. It may have been deleted in another tab.');
       const state = cloneJson(
         checkpoint.state,
@@ -206,6 +208,16 @@ export class InspectorCheckpointService {
       if (this.router && !await this.router.navigateByUrl(checkpoint.route)) {
         throw new Error(`The state was restored, but navigation to “${checkpoint.route}” was cancelled.`);
       }
+      const recentlyUsedCheckpoint = {
+        ...checkpoint,
+        lastUsedAt: new Date().toISOString(),
+      };
+      await this.repository.put(recentlyUsedCheckpoint);
+      this.checkpoints.set(
+        checkpoints
+          .map((item) => item.id === id ? recentlyUsedCheckpoint : item)
+          .sort(recentActivityFirst),
+      );
       return true;
     } catch (error) {
       this.error.set(this.messageFor(error, 'The checkpoint could not be restored. Delete it and save a new one.'));
@@ -233,7 +245,7 @@ export class InspectorCheckpointService {
       if (!checkpoint) throw new Error('Checkpoint not found. It may have been deleted in another tab.');
       await this.repository.put({ ...checkpoint, name: nextName });
       this.checkpoints.set(
-        checkpoints.map((item) => item.id === id ? { ...item, name: nextName } : item).sort(newestFirst),
+        checkpoints.map((item) => item.id === id ? { ...item, name: nextName } : item).sort(recentActivityFirst),
       );
       return true;
     } catch (error) {
@@ -340,8 +352,19 @@ function isQuotaError(error: unknown): boolean {
   );
 }
 
-function newestFirst(a: InspectorCheckpointRecord, b: InspectorCheckpointRecord): number {
-  return b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id);
+export function checkpointActivityAt(checkpoint: InspectorCheckpointRecord): string {
+  return checkpoint.lastUsedAt && checkpoint.lastUsedAt > checkpoint.createdAt
+    ? checkpoint.lastUsedAt
+    : checkpoint.createdAt;
+}
+
+export function recentActivityFirst(
+  a: InspectorCheckpointRecord,
+  b: InspectorCheckpointRecord,
+): number {
+  return checkpointActivityAt(b).localeCompare(checkpointActivityAt(a)) ||
+    b.createdAt.localeCompare(a.createdAt) ||
+    b.id.localeCompare(a.id);
 }
 
 function isCheckpointRecord(value: unknown): value is InspectorCheckpointRecord {
@@ -352,5 +375,6 @@ function isCheckpointRecord(value: unknown): value is InspectorCheckpointRecord 
     typeof checkpoint.name === 'string' &&
     typeof checkpoint.route === 'string' &&
     typeof checkpoint.createdAt === 'string' &&
+    (checkpoint.lastUsedAt === undefined || typeof checkpoint.lastUsedAt === 'string') &&
     'state' in checkpoint;
 }
