@@ -58,43 +58,38 @@ That's it. Press **`M`** in your browser to open the inspector toolbar. No furth
 
 ### Developer checkpoints
 
-Checkpoints save the current Angular Router URL plus state you explicitly register. They do **not** record or replay HTTP requests.
+Checkpoints automatically save the current Angular Router URL and the complete state of every Redux/NgRx store connected to Redux DevTools. One application adapter covers the shell and all microfrontends; no checkpoint code is required in the remotes.
+
+Install the hook in the shell entry point **before** federation and application bootstrap:
+
+```ts
+// main.ts
+import { initFederation } from '@angular-architects/native-federation';
+import { installInspectorReduxDevToolsHook } from 'inspector-ng';
+
+installInspectorReduxDevToolsHook();
+
+initFederation('/assets/federation.manifest.json')
+  .then(() => import('./bootstrap'))
+  .catch(console.error);
+```
+
+Redux DevTools must be installed and enabled in the browser. The early hook is important: only stores that connect after it is installed can be captured. Ensure each shell/remote store has its normal Redux DevTools or NgRx Store DevTools integration enabled.
+
+Provide checkpoints once in the shell:
 
 ```ts
 import { ApplicationConfig } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
-import {
-  createBehaviorSubjectCheckpointAdapter,
-  InspectorCheckpointRegistry,
-  provideInspectorCheckpoints,
-} from 'inspector-ng';
+import { provideInspectorCheckpoints } from 'inspector-ng';
 
 export const appConfig: ApplicationConfig = {
   providers: [provideInspectorCheckpoints()],
 };
 ```
 
-Register serializable state from an application service or component:
+Load all required remotes before restoring a checkpoint. Open the inspector and use the checkpoint button to save or restore. Restore sends a Redux DevTools `JUMP_TO_STATE` message to each captured store, then restores the saved URL.
 
-```ts
-const application = new BehaviorSubject({ customerName: '', amount: 0 });
-const unregister = checkpointRegistry.register(
-  createBehaviorSubjectCheckpointAdapter('workflow:application', application),
-);
-```
-
-Open the inspector and use the checkpoint button to save, restore, rename, or delete snapshots. Checkpoints use `localStorage`; when the browser quota is reached, the oldest checkpoint is removed to make room. Do not register sensitive values.
-
-For Native Federation, the shell owns `provideInspectorCheckpoints()`. Remotes receive the shell's `InspectorCheckpointRegistry` and register namespaced adapters such as `workflow:application`. The shell should register a remote loader for each scope so remotes are loaded before state is restored:
-
-```ts
-checkpointRegistry.registerRemoteScope('workflow', async () => {
-  const remote = await loadRemoteModule('workflow', './CheckpointAdapters');
-  remote.registerInspectorCheckpointAdapters(checkpointRegistry);
-});
-```
-
-Repeated remote adapter registration is safe, so a bridge may run before every restore. Share `inspector-ng` as a Native Federation singleton in both shell and remotes.
+The application adapter depends on DevTools connections having unique `name` values. Duplicate names are numbered in connection order, so stable unique names are recommended. State must be JSON-serializable. Checkpoints use `localStorage`; when quota is reached, the oldest checkpoint is removed. They do not record HTTP traffic or backend state.
 
 ### Inputs
 

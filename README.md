@@ -1,75 +1,129 @@
 # inspector-ng
 
-Measure, inspect, and align Angular UIs on localhost.
+`inspector-ng` is a developer overlay for Angular applications. It helps you inspect element sizes and styles, measure spacing, view typography, and place alignment guides directly in the browser.
 
-## Inspiration
+Press **M** to turn the inspector on or off.
 
-This project is inspired by [mesurer](https://github.com/ibelick/mesurer) by [ibelick](https://github.com/ibelick) — a lightweight measurement and alignment overlay for React apps. **inspector-ng** brings the same concept to the Angular ecosystem, reimagined with Angular's standalone components, signal-based reactivity, and `OnPush` change detection.
+## Requirements
 
-Credit to [ibelick](https://github.com/ibelick) for the original idea and design.
+- Node.js 18 or newer
+- pnpm
+- Angular 17.3
 
-## Installation
+## Run this repository locally
+
+```bash
+git clone https://github.com/destx0/inspector.git
+cd inspector
+pnpm install
+pnpm start
+```
+
+Open `http://localhost:4200`.
+
+`pnpm start` builds the library first and then starts the demo application. Changes to the demo reload normally. If you change the library source, restart the command or run the library watcher in another terminal:
+
+```bash
+pnpm ng build inspector-ng --watch --configuration development
+```
+
+Useful commands:
+
+```bash
+pnpm build                         # build the library and demo
+pnpm ng build inspector-ng         # build only the publishable library
+pnpm ng test inspector-ng --watch=false
+pnpm test                          # run all workspace tests in watch mode
+```
+
+The packaged library is written to `dist/inspector-ng`.
+
+## Use it in a real Angular project
+
+Install it in an Angular 17 application:
 
 ```bash
 npm install inspector-ng
 ```
 
-## Getting Started
+### Standalone application
 
-### Step 1: Import the component
-
-Open your root component (e.g. `app.component.ts`) and import `inspectorComponent` from `inspector-ng`. Add it to the `imports` array:
+Import the standalone component in your root component:
 
 ```ts
 import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 import { inspectorComponent } from 'inspector-ng';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [inspectorComponent],   // <-- add this
+  imports: [RouterOutlet, inspectorComponent],
   templateUrl: './app.component.html',
 })
 export class AppComponent {}
 ```
 
-> **Using NgModules?** If your app uses `NgModule` (not standalone), add `inspectorComponent` to your module's `imports` array instead, then use the selector in any component template within that module.
-
-### Step 2: Add the overlay to your template
-
-Place `<inspector-overlay>` in your root template (e.g. `app.component.html`). It can go at the top or bottom — it renders as a fixed overlay on top of everything:
+Add the overlay once, near the end of the root template:
 
 ```html
-<!-- Your existing app template -->
 <router-outlet></router-outlet>
 
-<!-- Inspector overlay -->
 <inspector-overlay
   [persistOnReload]="true"
   [hoverHighlightEnabled]="true"
 ></inspector-overlay>
 ```
 
-### Step 3: Press `M` to toggle the inspector
+Start the application, open it in a browser, and press **M**.
 
-That's it. Press **`M`** in your browser to open the inspector toolbar. No further configuration is required.
+### NgModule application
+
+The component is standalone, so add it to `imports`, not `declarations`:
+
+```ts
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { inspectorComponent } from 'inspector-ng';
+import { AppComponent } from './app.component';
+
+@NgModule({
+  declarations: [AppComponent],
+  imports: [BrowserModule, inspectorComponent],
+  bootstrap: [AppComponent],
+})
+export class AppModule {}
+```
+
+Then add `<inspector-overlay />` to `app.component.html`.
+
+### Try a local package before publishing
+
+From this repository:
+
+```bash
+pnpm ng build inspector-ng
+npm pack ./dist/inspector-ng
+```
+
+The second command creates a file such as `inspector-ng-0.0.6.tgz`. Install that file in another Angular project:
+
+```bash
+npm install /absolute/path/to/inspector-ng-0.0.6.tgz
+```
+
+This tests the same package contents users receive from npm.
 
 ## Configuration
 
-### Developer checkpoints
+| Input | Type | Default | Purpose |
+|---|---|---:|---|
+| `persistOnReload` | `boolean` | `false` | Save guides and inspector settings in `localStorage` |
+| `hoverHighlightEnabled` | `boolean` | `true` | Highlight the element under the pointer |
+| `highlightColor` | `string` | `#4f8cff` | Selection highlight color |
+| `guideColor` | `string` | `#ff7a00` | Alignment guide color |
 
-Install `provideInspectorCheckpoints()` in the shell application's providers and register JSON-serializable state with namespaced adapters. Checkpoints save the router URL and registered state only; they do not capture HTTP traffic. See the library README for a `BehaviorSubject` example and Native Federation shell/remote integration guidance.
-
-### Inputs
-
-| Input | Type | Default | Description |
-|---|---|---|---|
-| `persistOnReload` | `boolean` | `false` | Persist inspector state (guides, settings) to localStorage across page reloads |
-| `hoverHighlightEnabled` | `boolean` | `true` | Show a highlight rectangle when hovering over elements |
-| `highlightColor` | `string` | `"#4f8cff"` | Accent color for element selection highlights |
-| `guideColor` | `string` | `"#ff7a00"` | Color for alignment guides |
-
-### Example with all options
+Example:
 
 ```html
 <inspector-overlay
@@ -77,44 +131,112 @@ Install `provideInspectorCheckpoints()` in the shell application's providers and
   [hoverHighlightEnabled]="true"
   highlightColor="#10b981"
   guideColor="#f59e0b"
-></inspector-overlay>
+/>
 ```
 
-## Keyboard Shortcuts
+## Keyboard shortcuts
 
 | Key | Action |
 |---|---|
-| `M` | Toggle inspector on/off |
-| `S` | Select mode — click elements to inspect their bounds, padding, margin, and styles |
-| `G` | Guides mode — place alignment guides on the page |
-| `H` / `V` | Toggle guide orientation (horizontal / vertical) |
-| `Alt` (hold) | Measure pixel distance between the selected element and the hovered element |
-| `Esc` | Clear selection, deselect guides, reset state |
-| `Ctrl/Cmd + Z` | Undo last guide change |
-| `Ctrl/Cmd + Shift + Z` | Redo guide change |
+| `M` | Turn the inspector on or off |
+| `S` | Select and inspect an element |
+| `G` | Enter guide mode |
+| `H` / `V` | Use horizontal or vertical guides |
+| Hold `Alt` | Measure the distance between selected and hovered elements |
+| `Esc` | Clear the current selection |
+| `Ctrl/Cmd + Z` | Undo a guide change |
+| `Ctrl/Cmd + Shift + Z` | Redo a guide change |
 | `Backspace` / `Delete` | Delete the selected guide |
+
+## Optional state checkpoints
+
+Checkpoints save the Angular Router URL and, through Redux DevTools, the complete state of every connected Redux/NgRx store in the shell and its microfrontends.
+
+Install the hook in the shell entry point before federation starts:
+
+```ts
+import { initFederation } from '@angular-architects/native-federation';
+import { installInspectorReduxDevToolsHook } from 'inspector-ng';
+
+installInspectorReduxDevToolsHook();
+
+initFederation('/assets/federation.manifest.json')
+  .then(() => import('./bootstrap'))
+  .catch(console.error);
+```
+
+Redux DevTools must be installed and every store must have its normal Redux DevTools/NgRx Store DevTools connection enabled. Only connections created after the hook is installed are captured.
+
+Add the provider to `app.config.ts`:
+
+```ts
+import { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { provideInspectorCheckpoints } from 'inspector-ng';
+import { routes } from './app.routes';
+
+export const appConfig: ApplicationConfig = {
+  providers: [provideRouter(routes), provideInspectorCheckpoints()],
+};
+```
+
+`provideInspectorCheckpoints()` automatically registers one `application:redux-devtools` adapter. No checkpoint adapters are needed in individual remotes. Load all remotes before restoring; the inspector sends `JUMP_TO_STATE` to every captured store and then restores the URL.
+
+Give every DevTools connection a stable, unique name. State must be JSON-serializable. Checkpoints are stored in `localStorage` and do not capture HTTP traffic or backend state.
+
+## Publish to npm
+
+You need an npm account with permission to publish the `inspector-ng` package.
+
+1. Log in and confirm the account:
+
+   ```bash
+   npm login
+   npm whoami
+   ```
+
+2. Update `version` in `projects/inspector-ng/package.json`. npm will reject a version that has already been published.
+
+3. Build and test:
+
+   ```bash
+   pnpm ng test inspector-ng --watch=false
+   pnpm ng build inspector-ng
+   ```
+
+4. Inspect exactly what will be published:
+
+   ```bash
+   cd dist/inspector-ng
+   npm pack --dry-run
+   ```
+
+5. Publish from the package output directory:
+
+   ```bash
+   npm publish --access public
+   ```
+
+6. Verify the published version:
+
+   ```bash
+   npm view inspector-ng version
+   ```
+
+For later releases, increase the version again, rebuild, and repeat the publish steps. Do not run `npm publish` from the repository root; the root package is the private workspace, not the library package.
 
 ## Features
 
-- **Element Inspection** — Click any element to see its bounding box, padding, margin, font size, line height, color, and more.
-- **Typography Overlay** — Annotate all visible text blocks with their computed typography styles.
-- **Alignment Guides** — Place draggable vertical/horizontal guides with snap-to behavior.
-- **Distance Measurement** — Hold `Alt` to measure pixel distance between two elements.
-- **Gap Detection** — Detects and displays flex/grid gap values.
-- **Undo/Redo** — Full history for guide operations.
-- **State Persistence** — Optionally saves and restores state across page reloads.
-- **SSR-Safe** — Uses `isPlatformBrowser` to avoid running on the server.
-
-
-## Compatibility
-
-| Dependency | Version |
-|---|---|
-| `@angular/core` | `^17.3.0` |
-| `@angular/common` | `^17.3.0` |
-
-Built as a standalone component with signal-based reactivity and `OnPush` change detection.
+- Element bounds, margin, padding, gap, and computed-style inspection
+- Typography annotations
+- Horizontal and vertical alignment guides
+- Pixel-distance measurement
+- Guide undo and redo
+- Optional browser persistence
+- Angular SSR-safe browser checks
 
 ## License
 
 MIT
+
+Inspired by [mesurer](https://github.com/ibelick/mesurer) by [ibelick](https://github.com/ibelick).

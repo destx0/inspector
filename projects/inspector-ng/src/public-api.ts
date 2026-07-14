@@ -4,5 +4,6 @@ export * from "./lib/distances";
 export * from "./lib/dom";
 export * from "./lib/geometry";
 export * from "./lib/inspector.component";
+export * from "./lib/redux-devtools-checkpoints";
 export * from "./lib/types";
 export * from "./lib/utils";

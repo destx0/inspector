@@ -1,7 +1,8 @@
-import { Injectable, Inject, PLATFORM_ID, Provider, computed, signal } from '@angular/core';
+import { ENVIRONMENT_INITIALIZER, Injectable, Inject, PLATFORM_ID, Provider, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
+import { createReduxDevToolsApplicationCheckpointAdapter } from './redux-devtools-checkpoints';
 
 export type InspectorCheckpointValue =
   | string
@@ -305,7 +306,16 @@ export class InspectorCheckpointRegistry {
 }
 
 export function provideInspectorCheckpoints(): Provider[] {
-  return [InspectorCheckpointRegistry];
+  return [
+    InspectorCheckpointRegistry,
+    {
+      provide: ENVIRONMENT_INITIALIZER,
+      multi: true,
+      useValue: () => inject(InspectorCheckpointRegistry).register(
+        createReduxDevToolsApplicationCheckpointAdapter(),
+      ),
+    },
+  ];
 }
 
 export function createBehaviorSubjectCheckpointAdapter<T>(
