@@ -52,7 +52,7 @@ Place `<inspector-overlay>` in your root template (e.g. `app.component.html`). I
 ></inspector-overlay>
 ```
 
-### Step 3: Press `M` to toggle the inspector
+### Step 3: Open the command palette
 
 That's it. Press **`Ctrl/Cmd + Shift + P`** in your browser to open the Inspector command palette. No further configuration is required.
 
@@ -74,7 +74,7 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
-Use the compact Save action in the command palette to capture the current JSON-serializable NgRx root state immediately. `Ctrl/Cmd+Shift+P` opens the fuzzy checkpoint finder. `F2` renames the selected record and `Delete` opens inline confirmation.
+Use the compact Save action in the command palette to capture the current JSON-serializable NgRx root state immediately. `Ctrl/Cmd+Shift+P` opens the fuzzy checkpoint finder. Rename and delete remain explicit buttons on each record.
 
 Records are stored per origin in IndexedDB database `inspector-ng`, object store `checkpoints`. This needs no browser permission prompt and does not map to a visible or fixed OS path. Nothing is evicted automatically. Existing `inspector-checkpoints-v1` localStorage records are deliberately ignored.
 
@@ -104,25 +104,15 @@ A checkpoint contains the root Store value and current route. Restore dispatches
 
 | Key | Action |
 |---|---|
-| `M` | Toggle inspector on/off |
-| `S` | Select mode — click elements to inspect their bounds, padding, margin, and styles |
-| `G` | Guides mode — place alignment guides on the page |
-| `H` / `V` | Toggle guide orientation (horizontal / vertical) |
-| `Alt` (hold) | Measure pixel distance between the selected element and the hovered element |
-| `Esc` | Clear selection, deselect guides, reset state |
-| `Ctrl/Cmd + Z` | Undo last guide change |
-| `Ctrl/Cmd + Shift + Z` | Redo guide change |
-| `Backspace` / `Delete` | Delete the selected guide |
-| `Ctrl/Cmd + Shift + P` | Search and restore checkpoints when configured |
+| `Ctrl/Cmd + Shift + P` | Open the Inspector command palette when configured |
+| `Esc` | Clear selections, guides, and transient overlays |
 
 ## Features
 
 - **Element Inspection** — Click any element to see its bounding box, padding, margin, font size, line height, color, and more.
 - **Typography Overlay** — Annotate all visible text blocks with their computed typography styles.
 - **Alignment Guides** — Place draggable vertical/horizontal guides with snap-to behavior.
-- **Distance Measurement** — Hold `Alt` to measure pixel distance between two elements.
 - **Gap Detection** — Detects and displays flex/grid gap values.
-- **Undo/Redo** — Full history for guide operations.
 - **State Persistence** — Optionally saves and restores state across page reloads.
 - **SSR-Safe** — Uses `isPlatformBrowser` to avoid running on the server.
 

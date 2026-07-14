@@ -328,8 +328,7 @@
 }
 
 .inspector-command__actions {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  display: flex;
   gap: 2px;
   padding: 4px;
   border-top: 1px solid var(--command-edge);
@@ -337,6 +336,7 @@
 
 .inspector-command-action {
   display: flex;
+  flex: 1 1 0;
   min-width: 0;
   min-height: 28px;
   align-items: center;
@@ -377,6 +377,11 @@
 .inspector-command-action.is-active {
   background: oklch(72% 0.13 255 / 0.13);
   color: oklch(88% 0.05 255);
+}
+
+.inspector-command-action.is-selected {
+  background: var(--command-surface-active);
+  color: var(--command-text);
 }
 
 .inspector-command-action--danger:hover:not(:disabled) {

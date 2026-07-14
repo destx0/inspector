@@ -116,7 +116,56 @@ describe('inspectorComponent checkpoint command bar', () => {
     expect(component.filteredCheckpoints().map(({ id }) => id)).toEqual(['old']);
     keydown('ArrowDown');
     keydown('ArrowDown');
-    expect(component.activeCheckpointIndex()).toBe(0);
+    expect(component.activeCommandIndex()).toBe(0);
+  });
+
+  it('hides route metadata when it duplicates the checkpoint name', () => {
+    expect(component.shouldShowCheckpointRoute({ ...records[0], name: '/summary' })).toBeFalse();
+    expect(component.shouldShowCheckpointRoute({ ...records[0], name: 'SUMMARY/' })).toBeFalse();
+    expect(component.shouldShowCheckpointRoute(records[0])).toBeTrue();
+  });
+
+  it('searches Inspector actions after checkpoint results and runs the active match', async () => {
+    await openCommandBar();
+    const orderedResults = fixture.nativeElement.querySelectorAll('[data-command-index]');
+    expect(orderedResults.length).toBe(8);
+    expect(orderedResults[0].id).toBe('inspector-checkpoint-new');
+    expect(orderedResults[1].id).toBe('inspector-checkpoint-old');
+    expect(orderedResults[2].id).toBe('inspector-action-save');
+
+    const input = fixture.nativeElement.querySelector('#inspector-checkpoint-search') as HTMLInputElement;
+    input.value = 'typography';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(component.filteredCheckpoints()).toEqual([]);
+    expect(component.filteredInspectorActions().map(({ id }) => id)).toEqual(['type']);
+    expect(component.activeCommandResultId()).toBe('inspector-action-type');
+
+    keydown('Enter');
+    fixture.detectChanges();
+    expect(component.showTypography()).toBeTrue();
+    expect(component.commandBarOpen()).toBeFalse();
+  });
+
+  it('uses left and right arrows within the horizontal action strip', async () => {
+    await openCommandBar();
+    expect(component.activeCommandResultId()).toBe('inspector-checkpoint-new');
+
+    keydown('ArrowRight');
+    expect(component.activeCommandResultId()).toBe('inspector-action-save');
+
+    keydown('ArrowRight');
+    expect(component.activeCommandResultId()).toBe('inspector-action-select');
+    keydown('ArrowRight');
+    expect(component.activeCommandResultId()).toBe('inspector-action-type');
+    keydown('ArrowLeft');
+    expect(component.activeCommandResultId()).toBe('inspector-action-select');
+
+    keydown('Enter');
+    fixture.detectChanges();
+    expect(component.toolMode()).toBe('select');
+    expect(component.commandBarOpen()).toBeFalse();
   });
 
   it('restores the active checkpoint with Enter and announces success', async () => {
@@ -131,17 +180,51 @@ describe('inspectorComponent checkpoint command bar', () => {
     expect(fixture.nativeElement.textContent).toContain('Restored “Summary ready”.');
   });
 
-  it('supports F2 rename and inline Delete confirmation', async () => {
+  it('keeps rename and delete as explicit actions instead of keyboard shortcuts', async () => {
     await openCommandBar();
-    keydown('F2');
+    expect(keydown('F2').defaultPrevented).toBeFalse();
+    fixture.detectChanges();
+    expect(component.editingCheckpointId()).toBeNull();
+
+    (fixture.nativeElement.querySelector('[aria-label="Rename Summary ready"]') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(component.editingCheckpointId()).toBe('new');
 
     keydown('Escape');
-    keydown('Delete');
+    expect(keydown('Delete').defaultPrevented).toBeFalse();
+    fixture.detectChanges();
+    expect(component.deletingCheckpointId()).toBeNull();
+
+    (fixture.nativeElement.querySelector('[aria-label="Delete Summary ready"]') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(component.deletingCheckpointId()).toBe('new');
     expect(fixture.nativeElement.textContent).toContain('Delete “Summary ready”?');
+  });
+
+  it('does not register the former global Inspector shortcuts', () => {
+    for (const key of ['m', 's', 'g', 'h', 'v', 'Alt', 'Delete']) {
+      expect(keydown(key).defaultPrevented).toBeFalse();
+    }
+    expect(keydown('z', { ctrlKey: true }).defaultPrevented).toBeFalse();
+    expect(component.enabled()).toBeTrue();
+    expect(component.toolMode()).toBe('none');
+    expect(component.altPressed()).toBeFalse();
+  });
+
+  it('clears selections, guides, and transient overlays with Escape', () => {
+    const guide = { id: 'guide-1', orientation: 'vertical' as const, position: 120 };
+    component.guides.set([guide]);
+    component.selectedGuideId.set(guide.id);
+    component.hoverRect.set({ left: 10, top: 20, width: 30, height: 40 });
+    component.guidePreview.set(guide);
+    component.altPressed.set(true);
+
+    expect(keydown('Escape').defaultPrevented).toBeTrue();
+    expect(component.guides()).toEqual([]);
+    expect(component.selectedGuideId()).toBeNull();
+    expect(component.hoverRect()).toBeNull();
+    expect(component.guidePreview()).toBeNull();
+    expect(component.altPressed()).toBeFalse();
   });
 
   it('saves immediately from the command palette and shows a status toast', async () => {

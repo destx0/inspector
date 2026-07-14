@@ -2,7 +2,7 @@
 
 `inspector-ng` is a developer overlay for Angular applications. It helps you inspect element sizes and styles, measure spacing, view typography, and place alignment guides directly in the browser.
 
-Press **M** to turn the inspector on or off.
+Press **Ctrl/Cmd + Shift + P** to open the Inspector command palette.
 
 ## Requirements
 
@@ -140,16 +140,8 @@ Example:
 
 | Key | Action |
 |---|---|
-| `M` | Turn the inspector on or off |
-| `S` | Select and inspect an element |
-| `G` | Enter guide mode |
-| `H` / `V` | Use horizontal or vertical guides |
-| Hold `Alt` | Measure the distance between selected and hovered elements |
-| `Esc` | Clear the current selection |
-| `Ctrl/Cmd + Z` | Undo a guide change |
-| `Ctrl/Cmd + Shift + Z` | Redo a guide change |
-| `Backspace` / `Delete` | Delete the selected guide |
-| `Ctrl/Cmd + Shift + P` | Find and restore a saved NgRx checkpoint (when checkpoint providers are installed) |
+| `Ctrl/Cmd + Shift + P` | Open the Inspector command palette (when checkpoint providers are installed) |
+| `Esc` | Clear selections, guides, and transient overlays |
 
 ## Optional NgRx checkpoints
 

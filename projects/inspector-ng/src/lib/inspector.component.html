@@ -10,7 +10,7 @@
       <section class="inspector-command" (click)="$event.stopPropagation()">
         <header class="inspector-command__search">
           <label id="inspector-command-title" class="inspector-visually-hidden" for="inspector-checkpoint-search">
-            Search checkpoints
+            Search checkpoints and actions
           </label>
           <svg class="inspector-command__search-icon" viewBox="0 0 16 16" aria-hidden="true">
             <path d="M7 2.25a4.75 4.75 0 1 0 2.94 8.48l2.91 2.92.8-.8-2.92-2.91A4.75 4.75 0 0 0 7 2.25Zm-3.62 4.75a3.62 3.62 0 1 1 7.24 0 3.62 3.62 0 0 1-7.24 0Z" />
@@ -21,10 +21,10 @@
             type="search"
             autocomplete="off"
             spellcheck="false"
-            placeholder="Search checkpoints…"
+            placeholder="Search checkpoints or actions…"
             [value]="checkpointQuery()"
-            [attr.aria-controls]="'inspector-checkpoint-results'"
-            [attr.aria-activedescendant]="filteredCheckpoints().length ? 'inspector-checkpoint-' + filteredCheckpoints()[activeCheckpointIndex()].id : null"
+            [attr.aria-controls]="'inspector-checkpoint-results inspector-command-actions'"
+            [attr.aria-activedescendant]="activeCommandResultId()"
             (input)="updateCheckpointQuery($event)"
           />
         </header>
@@ -36,9 +36,9 @@
         <div id="inspector-checkpoint-results" class="inspector-command__results" role="listbox" aria-label="Saved checkpoints">
           @if (checkpointService.loading()) {
             <p class="inspector-command__message" role="status">Loading…</p>
-          } @else if (!checkpointService.checkpoints().length) {
+          } @else if (!checkpointService.checkpoints().length && !checkpointQuery().trim()) {
             <p class="inspector-command__message" role="status">No checkpoints yet</p>
-          } @else if (!filteredCheckpoints().length) {
+          } @else if (!filteredCheckpoints().length && !filteredInspectorActions().length) {
             <p class="inspector-command__message" role="status">No matches</p>
           } @else {
             @for (checkpoint of filteredCheckpoints(); track checkpoint.id; let index = $index) {
@@ -46,10 +46,10 @@
                 class="inspector-command-row"
                 role="option"
                 [id]="'inspector-checkpoint-' + checkpoint.id"
-                [attr.data-checkpoint-index]="index"
-                [attr.aria-selected]="activeCheckpointIndex() === index"
-                [class.is-active]="activeCheckpointIndex() === index"
-                [class.is-busy]="checkpointService.busy() && activeCheckpointIndex() === index"
+                [attr.data-command-index]="index"
+                [attr.aria-selected]="activeCommandIndex() === index"
+                [class.is-active]="activeCommandIndex() === index"
+                [class.is-busy]="checkpointService.busy() && activeCommandIndex() === index"
                 (mouseenter)="setActiveCheckpoint(index)"
                 (click)="deletingCheckpointId() === checkpoint.id || editingCheckpointId() === checkpoint.id ? null : restoreCheckpoint(checkpoint)"
               >
@@ -70,15 +70,17 @@
                 } @else {
                   <span class="inspector-command-row__content">
                     <span class="inspector-command-row__name">
-                      @if (checkpointService.busy() && activeCheckpointIndex() === index) {
+                      @if (checkpointService.busy() && activeCommandIndex() === index) {
                         Restoring…
                       } @else {
                         {{ checkpoint.name }}
                       }
                     </span>
                     <span class="inspector-command-row__meta">
-                      <span class="inspector-command-row__route">{{ checkpoint.route || '/' }}</span>
-                      <span class="inspector-command-row__separator" aria-hidden="true">·</span>
+                      @if (shouldShowCheckpointRoute(checkpoint)) {
+                        <span class="inspector-command-row__route">{{ checkpoint.route }}</span>
+                        <span class="inspector-command-row__separator" aria-hidden="true">·</span>
+                      }
                       <span class="inspector-command-row__activity">
                         {{ checkpoint.lastUsedAt ? 'Used' : 'Saved' }} {{ formatRelativeTime(checkpointActivityAt(checkpoint)) }}
                       </span>
@@ -98,67 +100,55 @@
           }
         </div>
 
-        <footer class="inspector-command__actions" aria-label="Inspector actions">
-          <button
-            type="button"
-            class="inspector-command-action"
-            [class.is-active]="toolMode() === 'select'"
-            (click)="setToolMode('select'); closeCheckpointCommandBar()"
-            aria-label="Select mode"
-          >
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2l8 8-3 .7L6.7 13 6 10 3 2z" /></svg>
-            <span>Select</span>
-          </button>
-          <button
-            type="button"
-            class="inspector-command-action"
-            [class.is-active]="showTypography()"
-            (click)="toggleTypography(); closeCheckpointCommandBar()"
-            aria-label="Toggle typography overlay"
-          >
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4V2h10v2h-4v10H7V4z" /></svg>
-            <span>Type</span>
-          </button>
-          <button
-            type="button"
-            class="inspector-command-action"
-            (click)="saveCheckpoint()"
-            [disabled]="checkpointService.busy()"
-            aria-label="Save checkpoint"
-          >
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 2h9.6l1.4 1.4V14h-11zm2 1.5v3h6v-3zm.5 6V12h6V9.5z" /></svg>
-            <span>Save</span>
-          </button>
-          <button
-            type="button"
-            class="inspector-command-action"
-            [class.is-active]="toolMode() === 'guides' && guideOrientation() === 'vertical'"
-            (click)="activateGuideOrientation('vertical'); closeCheckpointCommandBar()"
-            aria-label="Vertical guides"
-          >
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7.25 2h1.5v12h-1.5z" /></svg>
-            <span>V</span>
-          </button>
-          <button
-            type="button"
-            class="inspector-command-action"
-            [class.is-active]="toolMode() === 'guides' && guideOrientation() === 'horizontal'"
-            (click)="activateGuideOrientation('horizontal'); closeCheckpointCommandBar()"
-            aria-label="Horizontal guides"
-          >
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 7.25h12v1.5H2z" /></svg>
-            <span>H</span>
-          </button>
-          <button
-            type="button"
-            class="inspector-command-action inspector-command-action--danger"
-            (click)="closeCheckpointCommandBar(); disableInspector()"
-            aria-label="Disable inspector; press M to enable"
-          >
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7.25 1.5h1.5v6h-1.5zM4.1 3.35l.96 1.15A4.25 4.25 0 1 0 10.94 4.5l.96-1.15A5.75 5.75 0 1 1 4.1 3.35z" /></svg>
-            <span>Off</span>
-          </button>
-        </footer>
+        @if (filteredInspectorActions().length) {
+          <footer id="inspector-command-actions" class="inspector-command__actions" role="listbox" aria-label="Inspector actions" aria-orientation="horizontal">
+            @for (action of filteredInspectorActions(); track action.id; let index = $index) {
+              <button
+                type="button"
+                role="option"
+                class="inspector-command-action"
+                [id]="'inspector-action-' + action.id"
+                [attr.data-command-index]="filteredCheckpoints().length + index"
+                [attr.aria-label]="action.ariaLabel"
+                [attr.aria-selected]="activeCommandIndex() === filteredCheckpoints().length + index"
+                [attr.aria-disabled]="checkpointService.busy()"
+                [class.is-selected]="activeCommandIndex() === filteredCheckpoints().length + index"
+                [class.is-active]="
+                  (action.id === 'select' && toolMode() === 'select') ||
+                  (action.id === 'type' && showTypography()) ||
+                  (action.id === 'vertical' && toolMode() === 'guides' && guideOrientation() === 'vertical') ||
+                  (action.id === 'horizontal' && toolMode() === 'guides' && guideOrientation() === 'horizontal')
+                "
+                [class.inspector-command-action--danger]="action.id === 'off'"
+                [disabled]="checkpointService.busy()"
+                (mouseenter)="setActiveInspectorAction(index)"
+                (click)="executeInspectorAction(action)"
+              >
+                @switch (action.id) {
+                  @case ('select') {
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 2l8 8-3 .7L6.7 13 6 10 3 2z" /></svg>
+                  }
+                  @case ('type') {
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4V2h10v2h-4v10H7V4z" /></svg>
+                  }
+                  @case ('save') {
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 2h9.6l1.4 1.4V14h-11zm2 1.5v3h6v-3zm.5 6V12h6V9.5z" /></svg>
+                  }
+                  @case ('vertical') {
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7.25 2h1.5v12h-1.5z" /></svg>
+                  }
+                  @case ('horizontal') {
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 7.25h12v1.5H2z" /></svg>
+                  }
+                  @case ('off') {
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7.25 1.5h1.5v6h-1.5zM4.1 3.35l.96 1.15A4.25 4.25 0 1 0 10.94 4.5l.96-1.15A5.75 5.75 0 1 1 4.1 3.35z" /></svg>
+                  }
+                }
+                <span>{{ action.label }}</span>
+              </button>
+            }
+          </footer>
+        }
       </section>
     </dialog>
   }

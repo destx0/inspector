@@ -105,7 +105,20 @@ p {
   max-width: 640px;
 }
 
-.header-title-wrapper text-pressure {
+.brand-heading {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.brand-mark {
+  display: block;
+  width: 48px;
+  height: 48px;
+}
+
+.brand-heading text-pressure {
   display: block;
   height: 140px;
   margin-bottom: var(--space-xs);

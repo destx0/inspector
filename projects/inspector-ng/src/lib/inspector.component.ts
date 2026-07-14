@@ -47,6 +47,24 @@ import {
 import { fuzzyCheckpoints } from './checkpoint-search';
 import { createId, formatRelativeTime, formatValue } from './utils';
 
+type InspectorCommandActionId = 'select' | 'type' | 'save' | 'vertical' | 'horizontal' | 'off';
+
+interface InspectorCommandAction {
+  readonly id: InspectorCommandActionId;
+  readonly label: string;
+  readonly ariaLabel: string;
+  readonly keywords: string;
+}
+
+const INSPECTOR_COMMAND_ACTIONS: readonly InspectorCommandAction[] = [
+  { id: 'save', label: 'Save', ariaLabel: 'Save checkpoint', keywords: 'save checkpoint capture state' },
+  { id: 'select', label: 'Select', ariaLabel: 'Select mode', keywords: 'select inspect pointer element' },
+  { id: 'type', label: 'Type', ariaLabel: 'Toggle typography overlay', keywords: 'type typography text overlay' },
+  { id: 'vertical', label: 'V', ariaLabel: 'Vertical guides', keywords: 'vertical v guide guides' },
+  { id: 'horizontal', label: 'H', ariaLabel: 'Horizontal guides', keywords: 'horizontal h guide guides' },
+  { id: 'off', label: 'Off', ariaLabel: 'Disable inspector', keywords: 'off disable inspector power' },
+];
+
 @Component({
   selector: 'inspector-overlay',
   standalone: true,
@@ -73,7 +91,7 @@ export class inspectorComponent implements OnDestroy {
   readonly checkpointService = inject(InspectorCheckpointService, { optional: true });
   readonly commandBarOpen = signal(false);
   readonly checkpointQuery = signal('');
-  readonly activeCheckpointIndex = signal(0);
+  readonly activeCommandIndex = signal(0);
   readonly editingCheckpointId = signal<string | null>(null);
   readonly deletingCheckpointId = signal<string | null>(null);
   readonly renameDraft = signal('');
@@ -85,6 +103,24 @@ export class inspectorComponent implements OnDestroy {
       this.checkpointQuery(),
     ),
   );
+  readonly filteredInspectorActions = computed(() => {
+    const terms = this.checkpointQuery().trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+    if (!terms.length) return INSPECTOR_COMMAND_ACTIONS;
+    return INSPECTOR_COMMAND_ACTIONS.filter((action) => {
+      const searchableText = `${action.label} ${action.ariaLabel} ${action.keywords}`.toLocaleLowerCase();
+      return terms.every((term) => searchableText.includes(term));
+    });
+  });
+  readonly commandResultCount = computed(
+    () => this.filteredCheckpoints().length + this.filteredInspectorActions().length,
+  );
+  readonly activeCommandResultId = computed(() => {
+    const checkpoint = this.filteredCheckpoints()[this.activeCommandIndex()];
+    if (checkpoint) return `inspector-checkpoint-${checkpoint.id}`;
+    const actionIndex = this.activeCommandIndex() - this.filteredCheckpoints().length;
+    const action = this.filteredInspectorActions()[actionIndex];
+    return action ? `inspector-action-${action.id}` : null;
+  });
 
   readonly enabled = signal(true);
   readonly toolMode = signal<ToolMode>('none');
@@ -261,14 +297,14 @@ export class inspectorComponent implements OnDestroy {
     if (!this.checkpointService || !this.isBrowser || this.commandBarOpen()) return;
     this.commandBarOpen.set(true);
     this.checkpointQuery.set('');
-    this.activeCheckpointIndex.set(0);
+    this.activeCommandIndex.set(0);
     this.editingCheckpointId.set(null);
     this.deletingCheckpointId.set(null);
     this.checkpointService.clearError();
     this.checkpointDialog()?.nativeElement.showModal();
     queueMicrotask(() => this.checkpointSearch()?.nativeElement.focus());
     await this.checkpointService.load();
-    this.clampActiveCheckpoint();
+    this.clampActiveCommand();
   }
 
   closeCheckpointCommandBar() {
@@ -281,14 +317,56 @@ export class inspectorComponent implements OnDestroy {
 
   updateCheckpointQuery(event: Event) {
     this.checkpointQuery.set((event.target as HTMLInputElement).value);
-    this.activeCheckpointIndex.set(0);
+    this.activeCommandIndex.set(0);
     this.editingCheckpointId.set(null);
     this.deletingCheckpointId.set(null);
     this.checkpointService?.clearError();
   }
 
   setActiveCheckpoint(index: number) {
-    this.activeCheckpointIndex.set(index);
+    this.activeCommandIndex.set(index);
+  }
+
+  shouldShowCheckpointRoute(checkpoint: InspectorCheckpointRecord) {
+    if (!checkpoint.route.trim()) return false;
+    return this.normalizeCheckpointLabel(checkpoint.name) !== this.normalizeCheckpointLabel(checkpoint.route);
+  }
+
+  setActiveInspectorAction(index: number) {
+    this.activeCommandIndex.set(this.filteredCheckpoints().length + index);
+  }
+
+  async executeInspectorAction(action: InspectorCommandAction) {
+    if (this.checkpointService?.busy()) return;
+    switch (action.id) {
+      case 'select':
+        this.setToolMode('select');
+        this.closeCheckpointCommandBar();
+        break;
+      case 'type':
+        this.toggleTypography();
+        this.closeCheckpointCommandBar();
+        break;
+      case 'save':
+        await this.saveCheckpoint();
+        if (this.commandBarOpen()) {
+          const index = this.filteredInspectorActions().findIndex(({ id }) => id === action.id);
+          if (index >= 0) this.setActiveInspectorAction(index);
+        }
+        break;
+      case 'vertical':
+        this.activateGuideOrientation('vertical');
+        this.closeCheckpointCommandBar();
+        break;
+      case 'horizontal':
+        this.activateGuideOrientation('horizontal');
+        this.closeCheckpointCommandBar();
+        break;
+      case 'off':
+        this.closeCheckpointCommandBar();
+        this.disableInspector();
+        break;
+    }
   }
 
   async restoreCheckpoint(checkpoint: InspectorCheckpointRecord) {
@@ -350,7 +428,7 @@ export class inspectorComponent implements OnDestroy {
     event?.stopPropagation();
     if (!await this.checkpointService?.delete(checkpoint.id)) return;
     this.deletingCheckpointId.set(null);
-    this.clampActiveCheckpoint();
+    this.clampActiveCommand();
     this.checkpointSearch()?.nativeElement.focus();
   }
 
@@ -413,90 +491,31 @@ export class inspectorComponent implements OnDestroy {
       return;
     }
 
-    if (key === 'm') {
-      const target = event.target as HTMLElement | null;
-      if (
-        target?.matches('input, textarea, select') ||
-        target?.isContentEditable
-      ) {
-        return;
-      }
-      event.preventDefault();
-      this.setInspectorEnabled(!this.enabled());
-      return;
-    }
-
-    if (!this.enabled()) {
-      return;
-    }
-
-    if ((event.metaKey || event.ctrlKey) && key === 'z') {
-      event.preventDefault();
-      event.shiftKey ? this.redo() : this.undo();
-      return;
-    }
-
-    if (key === 's') {
-      event.preventDefault();
-      this.setToolMode('select');
-      return;
-    }
-
-    if (key === 'g') {
-      event.preventDefault();
-      this.setToolMode('guides');
-      return;
-    }
-
-    if (key === 'h') {
-      event.preventDefault();
-      this.setGuideOrientation('horizontal');
-      return;
-    }
-
-    if (key === 'v') {
-      event.preventDefault();
-      this.setGuideOrientation('vertical');
-      return;
-    }
-
-    if (event.key === 'Alt') {
-      this.altPressed.set(true);
-      this.updateDistanceOverlay();
-      return;
-    }
-
     if (key === 'escape') {
       event.preventDefault();
-      this.selectedMeasurement.set(null);
-      this.selectedGuideId.set(null);
-      this.hoverRect.set(null);
-      this.distanceOverlay.set(null);
-      this.selectedElement = null;
-      this.hoverElement = null;
-      this.guidePreview.set(null);
-      this.clearGuides();
-      this.refreshTypographyBlocks();
-      return;
-    }
-
-    if ((key === 'backspace' || key === 'delete') && this.selectedGuideId()) {
-      event.preventDefault();
-      const nextGuides = this.guides().filter(
-        (guide) => guide.id !== this.selectedGuideId(),
-      );
-      this.guides.set(nextGuides);
-      this.selectedGuideId.set(null);
-      this.recordHistory(nextGuides);
+      this.clearInspectorCanvas();
     }
   }
 
-  @HostListener('window:keyup', ['$event'])
-  handleKeyup(event: KeyboardEvent) {
-    if (event.key === 'Alt') {
-      this.altPressed.set(false);
-      this.distanceOverlay.set(null);
-    }
+  private clearInspectorCanvas() {
+    this.selectedMeasurement.set(null);
+    this.selectedGuideId.set(null);
+    this.hoverRect.set(null);
+    this.distanceOverlay.set(null);
+    this.altPressed.set(false);
+    this.selectedElement = null;
+    this.hoverElement = null;
+    this.guidePreview.set(null);
+    this.draggingGuideId = null;
+    this.clearGuides();
+    this.refreshTypographyBlocks();
+  }
+
+  private normalizeCheckpointLabel(value: string) {
+    return value
+      .trim()
+      .toLocaleLowerCase()
+      .replace(/^\/+|\/+$/g, '');
   }
 
   @HostListener('window:pointermove', ['$event'])
@@ -643,7 +662,10 @@ export class inspectorComponent implements OnDestroy {
 
   private handleCommandBarKeydown(event: KeyboardEvent, key: string) {
     const checkpoints = this.filteredCheckpoints();
-    const active = checkpoints[this.activeCheckpointIndex()];
+    const actions = this.filteredInspectorActions();
+    const activeCheckpoint = checkpoints[this.activeCommandIndex()];
+    const activeActionIndex = this.activeCommandIndex() - checkpoints.length;
+    const activeAction = actions[activeActionIndex];
     const target = event.target as HTMLElement | null;
     const isRenameInput = target?.classList?.contains('inspector-command-row__rename') ?? false;
 
@@ -664,42 +686,62 @@ export class inspectorComponent implements OnDestroy {
     if (isRenameInput) return;
     if (key === 'arrowdown') {
       event.preventDefault();
-      this.activeCheckpointIndex.set(Math.min(this.activeCheckpointIndex() + 1, Math.max(0, checkpoints.length - 1)));
-      this.scrollActiveCheckpointIntoView();
+      if (activeCheckpoint) {
+        const nextIndex = this.activeCommandIndex() < checkpoints.length - 1
+          ? this.activeCommandIndex() + 1
+          : actions.length ? checkpoints.length : this.activeCommandIndex();
+        this.activeCommandIndex.set(nextIndex);
+      }
+      this.scrollActiveCommandIntoView();
       return;
     }
     if (key === 'arrowup') {
       event.preventDefault();
-      this.activeCheckpointIndex.set(Math.max(0, this.activeCheckpointIndex() - 1));
-      this.scrollActiveCheckpointIntoView();
+      if (activeAction && checkpoints.length) {
+        this.activeCommandIndex.set(checkpoints.length - 1);
+      } else if (activeCheckpoint) {
+        this.activeCommandIndex.set(Math.max(0, this.activeCommandIndex() - 1));
+      }
+      this.scrollActiveCommandIntoView();
       return;
     }
-    if (key === 'enter' && active && !this.deletingCheckpointId()) {
+    if (key === 'arrowright' && (activeCheckpoint || activeAction) && actions.length) {
       event.preventDefault();
-      void this.restoreCheckpoint(active);
+      const nextActionIndex = activeAction
+        ? Math.min(activeActionIndex + 1, actions.length - 1)
+        : 0;
+      this.activeCommandIndex.set(checkpoints.length + nextActionIndex);
+      this.scrollActiveCommandIntoView();
       return;
     }
-    if (key === 'f2' && active) {
+    if (key === 'arrowleft' && activeAction) {
       event.preventDefault();
-      this.beginRename(active);
+      this.activeCommandIndex.set(checkpoints.length + Math.max(0, activeActionIndex - 1));
+      this.scrollActiveCommandIntoView();
       return;
     }
-    if (key === 'delete' && active) {
+    if (key === 'enter' && activeCheckpoint && !this.deletingCheckpointId()) {
       event.preventDefault();
-      this.beginDelete(active);
+      void this.restoreCheckpoint(activeCheckpoint);
+      return;
+    }
+    if (key === 'enter' && activeAction) {
+      event.preventDefault();
+      void this.executeInspectorAction(activeAction);
+      return;
     }
   }
 
-  private clampActiveCheckpoint() {
-    this.activeCheckpointIndex.set(
-      Math.min(this.activeCheckpointIndex(), Math.max(0, this.filteredCheckpoints().length - 1)),
+  private clampActiveCommand() {
+    this.activeCommandIndex.set(
+      Math.min(this.activeCommandIndex(), Math.max(0, this.commandResultCount() - 1)),
     );
   }
 
-  private scrollActiveCheckpointIntoView() {
+  private scrollActiveCommandIntoView() {
     queueMicrotask(() => {
       const row = this.checkpointDialog()?.nativeElement.querySelector<HTMLElement>(
-        `[data-checkpoint-index="${this.activeCheckpointIndex()}"]`,
+        `[data-command-index="${this.activeCommandIndex()}"]`,
       );
       row?.scrollIntoView({ block: 'nearest' });
     });

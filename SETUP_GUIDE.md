@@ -111,15 +111,14 @@ That is the complete checkpoint setup. No adapter, registry, service call, brows
 
 Restore replaces the complete NgRx root state first and then navigates through Angular Router to the saved route. The command palette works while an application input is focused and while the Inspector is disabled.
 
-Additional command-bar keys:
+Command-palette navigation:
 
 | Key | Action |
 |---|---|
-| `ArrowDown` / `ArrowUp` | Select a checkpoint |
-| `Enter` | Restore the selected checkpoint |
+| `ArrowDown` / `ArrowUp` | Select a checkpoint or move between sections |
+| `ArrowLeft` / `ArrowRight` | Select an Inspector action |
+| `Enter` | Run the selected checkpoint or action |
 | `Escape` | Close or cancel an inline action |
-| `F2` | Rename the selected checkpoint |
-| `Delete` | Delete the selected checkpoint after confirmation |
 
 ## Complete serializable state example
 

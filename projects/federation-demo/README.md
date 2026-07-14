@@ -38,7 +38,7 @@ Open `http://localhost:4200/workflow`.
 5. Confirm that the restored NgRx state appears and the shell navigates back to the checkpoint route.
 6. Reload the shell and reopen the command bar to confirm the catalog remains in IndexedDB.
 
-The shortcut also works while an application input is focused and while the Inspector is disabled. `F2` renames the active checkpoint; `Delete` starts inline deletion confirmation.
+The shortcut also works while an application input is focused and while the Inspector is disabled. Rename and delete remain explicit buttons on each checkpoint.
 
 ## Storage and scope
 

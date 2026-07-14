@@ -2,11 +2,14 @@
   <header class="page-header">
     <div class="header-top">
       <div class="header-title-wrapper">
-        <text-pressure 
-          text="inspector-ng"
-          [minFontSize]="32"
-          [textColor]="'#ffffff'"
-        />
+        <div class="brand-heading">
+          <img class="brand-mark" src="assets/inspector-mark.svg" alt="" aria-hidden="true" />
+          <text-pressure
+            text="inspector-ng"
+            [minFontSize]="32"
+            [textColor]="'#ffffff'"
+          />
+        </div>
         <p class="tagline">
           Measure, inspect, and align Angular UIs on localhost.
         </p>
@@ -127,32 +130,12 @@
     <h2>Keyboard Shortcuts</h2>
     <div class="shortcuts-grid">
       <div class="shortcut-item">
-        <kbd>M</kbd>
-        <span>Toggle inspector</span>
-      </div>
-      <div class="shortcut-item">
-        <kbd>S</kbd>
-        <span>Select mode</span>
-      </div>
-      <div class="shortcut-item">
-        <kbd>G</kbd>
-        <span>Guides mode</span>
-      </div>
-      <div class="shortcut-item">
-        <kbd>H / V</kbd>
-        <span>Guide orientation</span>
-      </div>
-      <div class="shortcut-item">
-        <kbd>Alt</kbd>
-        <span>Measure spacing</span>
+        <kbd>Ctrl/Cmd + Shift + P</kbd>
+        <span>Open command palette</span>
       </div>
       <div class="shortcut-item">
         <kbd>Esc</kbd>
-        <span>Clear state</span>
-      </div>
-      <div class="shortcut-item">
-        <kbd>Ctrl/Cmd + Shift + P</kbd>
-        <span>Restore checkpoint</span>
+        <span>Clear Inspector canvas</span>
       </div>
     </div>
   </section>
@@ -180,7 +163,7 @@
         </div>
         <div class="feature-card feature-card--secondary">
           <h4>Spacing</h4>
-          <p>Hold Alt to measure gap to another section.</p>
+          <p>Inspect padding, margin, and gap context in Select mode.</p>
         </div>
         <div class="feature-card">
           <h4>Guides</h4>
