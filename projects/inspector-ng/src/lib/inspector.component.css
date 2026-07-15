@@ -102,63 +102,40 @@
   border-bottom: 1px solid var(--command-edge);
 }
 
-.inspector-command__search-icon {
-  width: 15px;
-  height: 15px;
+.inspector-command__runcat {
+  width: 20px;
+  height: 20px;
   flex: 0 0 auto;
-  overflow: visible;
-  fill: none;
-  stroke: var(--command-faint);
-  stroke-width: 1.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  overflow: hidden;
+  opacity: 0.72;
+  transition: opacity 140ms var(--inspector-ease);
 }
 
-.inspector-command__search-icon circle {
-  fill: var(--command-faint);
-  stroke: none;
+.inspector-command__runcat-sprite {
+  display: block;
+  width: 500%;
+  height: 100%;
+  max-width: none;
+  user-select: none;
+  transform: translateX(0);
 }
 
-.inspector-command__search-icon--cat {
-  transition: stroke 140ms var(--inspector-ease);
+.inspector-command__search:focus-within .inspector-command__runcat {
+  opacity: 1;
 }
 
-.inspector-command__cat-face {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: inspector-cat-listen 5.4s var(--inspector-ease) infinite;
+@media (prefers-reduced-motion: no-preference) {
+  .inspector-command__runcat-sprite {
+    animation: inspector-runcat-run 400ms steps(1, end) infinite;
+  }
 }
 
-.inspector-command__cat-eyes {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: inspector-cat-blink 4.2s ease-out infinite;
-}
-
-.inspector-command__search:focus-within .inspector-command__search-icon--cat {
-  stroke: var(--command-accent);
-  animation: inspector-cat-arrive 420ms var(--inspector-ease) both;
-}
-
-.inspector-command__search:focus-within .inspector-command__search-icon circle {
-  fill: var(--command-accent);
-}
-
-@keyframes inspector-cat-arrive {
-  0% { transform: translateY(1px) rotate(-7deg); }
-  65% { transform: translateY(0) rotate(3deg); }
-  100% { transform: none; }
-}
-
-@keyframes inspector-cat-listen {
-  0%, 88%, 100% { transform: rotate(0); }
-  92% { transform: rotate(-5deg); }
-  96% { transform: rotate(3deg); }
-}
-
-@keyframes inspector-cat-blink {
-  0%, 90%, 94%, 100% { transform: scaleY(1); }
-  92% { transform: scaleY(0.08); }
+@keyframes inspector-runcat-run {
+  0%, 19.99% { transform: translateX(0); }
+  20%, 39.99% { transform: translateX(-20%); }
+  40%, 59.99% { transform: translateX(-40%); }
+  60%, 79.99% { transform: translateX(-60%); }
+  80%, 100% { transform: translateX(-80%); }
 }
 
 .inspector-command__search input,
@@ -499,11 +476,13 @@
     transform: none;
   }
 
-  .inspector-command__search-icon--cat,
-  .inspector-command__cat-face,
-  .inspector-command__cat-eyes {
-    animation: none;
+  .inspector-command__runcat {
     transition: none;
+  }
+
+  .inspector-command__runcat-sprite {
+    animation: none;
+    transform: translateX(0);
   }
 }
 

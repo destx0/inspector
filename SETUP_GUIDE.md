@@ -16,15 +16,15 @@ cd checkpoint-demo
 For an existing Angular 17 application that already uses Angular Router and NgRx Store:
 
 ```bash
-pnpm add inspector-ng@0.0.8
-# or: npm install inspector-ng@0.0.8
+pnpm add inspector-ng@0.0.13
+# or: npm install inspector-ng@0.0.13
 ```
 
 For a new application without NgRx:
 
 ```bash
-pnpm add inspector-ng@0.0.8 @ngrx/store@^17.2.0
-# or: npm install inspector-ng@0.0.8 @ngrx/store@^17.2.0
+pnpm add inspector-ng@0.0.13 @ngrx/store@^17.2.0
+# or: npm install inspector-ng@0.0.13 @ngrx/store@^17.2.0
 ```
 
 Redux DevTools support is optional:
@@ -44,7 +44,7 @@ npm pack ./dist/inspector-ng
 Then install the generated tarball in the new application:
 
 ```bash
-npm install /absolute/path/to/inspector-ng-0.0.8.tgz @ngrx/store@^17.2.0
+npm install /absolute/path/to/inspector-ng-0.0.13.tgz @ngrx/store@^17.2.0
 ```
 
 ## 2. Add the provider
@@ -249,14 +249,11 @@ Checkpoints do not capture HTTP requests, backend data, component-local state, D
 
 ```html
 <inspector-overlay
-  [persistOnReload]="true"
   [hoverHighlightEnabled]="true"
   highlightColor="#4f8cff"
   guideColor="#ff7a00"
 />
 ```
-
-`persistOnReload` applies only to Inspector guides and settings. Checkpoints always use IndexedDB.
 
 ## Troubleshooting
 

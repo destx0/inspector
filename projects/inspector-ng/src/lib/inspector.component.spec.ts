@@ -1,5 +1,5 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Action, provideStore } from '@ngrx/store';
+import { ComponentFixture, TestBed } from "@angular/core/testing";
+import { Action, provideStore } from "@ngrx/store";
 
 import {
   INSPECTOR_CHECKPOINT_REPOSITORY,
@@ -7,14 +7,19 @@ import {
   InspectorCheckpointRepository,
   InspectorCheckpointService,
   provideInspectorCheckpoints,
-} from './checkpoints';
-import { inspectorComponent } from './inspector.component';
+} from "./checkpoints";
+import { inspectorComponent } from "./inspector.component";
 
 class MemoryRepository extends InspectorCheckpointRepository {
   records: InspectorCheckpointRecord[] = [];
-  async list() { return structuredClone(this.records); }
+  async list() {
+    return structuredClone(this.records);
+  }
   async put(checkpoint: InspectorCheckpointRecord) {
-    this.records = [checkpoint, ...this.records.filter(({ id }) => id !== checkpoint.id)];
+    this.records = [
+      checkpoint,
+      ...this.records.filter(({ id }) => id !== checkpoint.id),
+    ];
   }
   async delete(id: string) {
     this.records = this.records.filter((checkpoint) => checkpoint.id !== id);
@@ -26,34 +31,57 @@ function reducer(state = { value: 1 }, _action: Action) {
 }
 
 function keydown(key: string, options: KeyboardEventInit = {}): KeyboardEvent {
-  const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...options });
+  const event = new KeyboardEvent("keydown", {
+    key,
+    bubbles: true,
+    cancelable: true,
+    ...options,
+  });
   window.dispatchEvent(event);
   return event;
 }
 
-describe('inspectorComponent without checkpoints', () => {
-  it('does not render checkpoint controls or steal Ctrl+Shift+P', async () => {
-    await TestBed.configureTestingModule({ imports: [inspectorComponent] }).compileComponents();
+describe("inspectorComponent without checkpoints", () => {
+  it("does not render checkpoint controls or steal Ctrl+Shift+P", async () => {
+    await TestBed.configureTestingModule({
+      imports: [inspectorComponent],
+    }).compileComponents();
     const fixture = TestBed.createComponent(inspectorComponent);
     fixture.detectChanges();
 
-    const event = keydown('p', { ctrlKey: true, shiftKey: true });
+    const event = keydown("p", { ctrlKey: true, shiftKey: true });
     fixture.detectChanges();
     expect(event.defaultPrevented).toBeFalse();
-    expect(fixture.nativeElement.querySelector('[aria-label="Save checkpoint"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('dialog')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[aria-label="Save checkpoint"]'),
+    ).toBeNull();
+    expect(fixture.nativeElement.querySelector("dialog")).toBeNull();
   });
 });
 
-describe('inspectorComponent checkpoint command bar', () => {
+describe("inspectorComponent checkpoint command bar", () => {
   let fixture: ComponentFixture<inspectorComponent>;
   let component: inspectorComponent;
   let repository: MemoryRepository;
   let service: InspectorCheckpointService;
 
   const records: InspectorCheckpointRecord[] = [
-    { version: 1, id: 'new', name: 'Summary ready', route: '/summary', createdAt: '2026-01-02T00:00:00.000Z', state: { test: { value: 2 } } },
-    { version: 1, id: 'old', name: 'Workflow start', route: '/workflow', createdAt: '2026-01-01T00:00:00.000Z', state: { test: { value: 1 } } },
+    {
+      version: 1,
+      id: "new",
+      name: "Summary ready",
+      route: "/summary",
+      createdAt: "2026-01-02T00:00:00.000Z",
+      state: { test: { value: 2 } },
+    },
+    {
+      version: 1,
+      id: "old",
+      name: "Workflow start",
+      route: "/workflow",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      state: { test: { value: 1 } },
+    },
   ];
 
   beforeEach(async () => {
@@ -74,31 +102,41 @@ describe('inspectorComponent checkpoint command bar', () => {
   });
 
   async function openCommandBar(metaKey = false) {
-    const event = keydown('p', { ctrlKey: !metaKey, metaKey, shiftKey: true });
+    const event = keydown("p", { ctrlKey: !metaKey, metaKey, shiftKey: true });
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
     return event;
   }
 
-  it('opens with Ctrl/Cmd+Shift+P, focuses search, and loads results', async () => {
+  it("opens with Ctrl/Cmd+Shift+P, focuses search, and loads results", async () => {
     expect((await openCommandBar()).defaultPrevented).toBeTrue();
     expect(component.commandBarOpen()).toBeTrue();
-    expect(document.activeElement?.id).toBe('inspector-checkpoint-search');
-    expect((document.activeElement as HTMLInputElement).placeholder).toBe('Unleash inspector-ng…');
-    expect(fixture.nativeElement.querySelector('.inspector-command__search-icon--cat')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('.inspector-command__cat-eyes')).not.toBeNull();
-    expect(fixture.nativeElement.querySelectorAll('.inspector-command-row').length).toBe(2);
-    expect(fixture.nativeElement.querySelector('.inspector-command__footer')).toBeNull();
-    expect(fixture.nativeElement.querySelector('.inspector-command-row__activity')?.textContent).toContain('Saved');
+    expect(document.activeElement?.id).toBe("inspector-checkpoint-search");
+    expect((document.activeElement as HTMLInputElement).placeholder).toBe(
+      "inspector-ng…",
+    );
+    expect(
+      fixture.nativeElement.querySelector(".inspector-command__runcat-sprite"),
+    ).not.toBeNull();
+    expect(
+      fixture.nativeElement.querySelectorAll(".inspector-command-row").length,
+    ).toBe(2);
+    expect(
+      fixture.nativeElement.querySelector(".inspector-command__footer"),
+    ).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector(".inspector-command-row__activity")
+        ?.textContent,
+    ).toContain("Saved");
 
     component.closeCheckpointCommandBar();
     fixture.detectChanges();
     expect((await openCommandBar(true)).defaultPrevented).toBeTrue();
   });
 
-  it('opens while an application input is focused and while the inspector is disabled', async () => {
-    const input = document.createElement('input');
+  it("opens while an application input is focused and while the inspector is disabled", async () => {
+    const input = document.createElement("input");
     document.body.appendChild(input);
     input.focus();
     component.disableInspector();
@@ -109,120 +147,161 @@ describe('inspectorComponent checkpoint command bar', () => {
     input.remove();
   });
 
-  it('filters names and clamps arrow navigation', async () => {
+  it("filters names and clamps arrow navigation", async () => {
     await openCommandBar();
-    const input = fixture.nativeElement.querySelector('#inspector-checkpoint-search') as HTMLInputElement;
-    input.value = 'work';
-    input.dispatchEvent(new Event('input', { bubbles: true }));
+    const input = fixture.nativeElement.querySelector(
+      "#inspector-checkpoint-search",
+    ) as HTMLInputElement;
+    input.value = "work";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
     fixture.detectChanges();
 
-    expect(component.filteredCheckpoints().map(({ id }) => id)).toEqual(['old']);
-    keydown('ArrowDown');
-    keydown('ArrowDown');
+    expect(component.filteredCheckpoints().map(({ id }) => id)).toEqual([
+      "old",
+    ]);
+    keydown("ArrowDown");
+    keydown("ArrowDown");
     expect(component.activeCommandIndex()).toBe(0);
   });
 
-  it('hides route metadata when it duplicates the checkpoint name', () => {
-    expect(component.shouldShowCheckpointRoute({ ...records[0], name: '/summary' })).toBeFalse();
-    expect(component.shouldShowCheckpointRoute({ ...records[0], name: 'SUMMARY/' })).toBeFalse();
+  it("hides route metadata when it duplicates the checkpoint name", () => {
+    expect(
+      component.shouldShowCheckpointRoute({ ...records[0], name: "/summary" }),
+    ).toBeFalse();
+    expect(
+      component.shouldShowCheckpointRoute({ ...records[0], name: "SUMMARY/" }),
+    ).toBeFalse();
     expect(component.shouldShowCheckpointRoute(records[0])).toBeTrue();
   });
 
-  it('searches Inspector actions after checkpoint results and runs the active match', async () => {
+  it("searches Inspector actions after checkpoint results and runs the active match", async () => {
     await openCommandBar();
-    const orderedResults = fixture.nativeElement.querySelectorAll('[data-command-index]');
+    const orderedResults = fixture.nativeElement.querySelectorAll(
+      "[data-command-index]",
+    );
     expect(orderedResults.length).toBe(8);
-    expect(orderedResults[0].id).toBe('inspector-checkpoint-new');
-    expect(orderedResults[1].id).toBe('inspector-checkpoint-old');
-    expect(orderedResults[2].id).toBe('inspector-action-save');
+    expect(orderedResults[0].id).toBe("inspector-checkpoint-new");
+    expect(orderedResults[1].id).toBe("inspector-checkpoint-old");
+    expect(orderedResults[2].id).toBe("inspector-action-save");
 
-    const input = fixture.nativeElement.querySelector('#inspector-checkpoint-search') as HTMLInputElement;
-    input.value = 'typography';
-    input.dispatchEvent(new Event('input', { bubbles: true }));
+    const input = fixture.nativeElement.querySelector(
+      "#inspector-checkpoint-search",
+    ) as HTMLInputElement;
+    input.value = "typography";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
     fixture.detectChanges();
 
     expect(component.filteredCheckpoints()).toEqual([]);
-    expect(component.filteredInspectorActions().map(({ id }) => id)).toEqual(['type']);
-    expect(component.activeCommandResultId()).toBe('inspector-action-type');
+    expect(component.filteredInspectorActions().map(({ id }) => id)).toEqual([
+      "type",
+    ]);
+    expect(component.activeCommandResultId()).toBe("inspector-action-type");
 
-    keydown('Enter');
+    keydown("Enter");
     fixture.detectChanges();
     expect(component.showTypography()).toBeTrue();
     expect(component.commandBarOpen()).toBeFalse();
   });
 
-  it('uses left and right arrows within the horizontal action strip', async () => {
+  it("uses left and right arrows within the horizontal action strip", async () => {
     await openCommandBar();
-    expect(component.activeCommandResultId()).toBe('inspector-checkpoint-new');
+    expect(component.activeCommandResultId()).toBe("inspector-checkpoint-new");
 
-    keydown('ArrowRight');
-    expect(component.activeCommandResultId()).toBe('inspector-action-save');
+    keydown("ArrowRight");
+    expect(component.activeCommandResultId()).toBe("inspector-action-save");
 
-    keydown('ArrowRight');
-    expect(component.activeCommandResultId()).toBe('inspector-action-select');
-    keydown('ArrowRight');
-    expect(component.activeCommandResultId()).toBe('inspector-action-type');
-    keydown('ArrowLeft');
-    expect(component.activeCommandResultId()).toBe('inspector-action-select');
+    keydown("ArrowRight");
+    expect(component.activeCommandResultId()).toBe("inspector-action-select");
+    keydown("ArrowRight");
+    expect(component.activeCommandResultId()).toBe("inspector-action-type");
+    keydown("ArrowLeft");
+    expect(component.activeCommandResultId()).toBe("inspector-action-select");
 
-    keydown('Enter');
+    keydown("Enter");
     fixture.detectChanges();
-    expect(component.toolMode()).toBe('select');
+    expect(component.toolMode()).toBe("select");
     expect(component.commandBarOpen()).toBeFalse();
   });
 
-  it('restores the active checkpoint with Enter and announces success', async () => {
+  it("restores the active checkpoint with Enter and announces success", async () => {
     await openCommandBar();
-    const restore = spyOn(service, 'restore').and.resolveTo(true);
-    keydown('Enter');
+    const restore = spyOn(service, "restore").and.resolveTo(true);
+    keydown("Enter");
     await Promise.resolve();
     fixture.detectChanges();
 
-    expect(restore).toHaveBeenCalledWith('new');
+    expect(restore).toHaveBeenCalledWith("new");
     expect(component.commandBarOpen()).toBeFalse();
-    expect(fixture.nativeElement.textContent).toContain('Restored “Summary ready”.');
+    expect(fixture.nativeElement.textContent).toContain(
+      "Restored “Summary ready”.",
+    );
   });
 
-  it('keeps rename and delete as explicit actions instead of keyboard shortcuts', async () => {
+  it("keeps rename and delete as explicit actions instead of keyboard shortcuts", async () => {
     await openCommandBar();
-    expect(keydown('F2').defaultPrevented).toBeFalse();
+    expect(keydown("F2").defaultPrevented).toBeFalse();
     fixture.detectChanges();
     expect(component.editingCheckpointId()).toBeNull();
 
-    (fixture.nativeElement.querySelector('[aria-label="Rename Summary ready"]') as HTMLButtonElement).click();
+    (
+      fixture.nativeElement.querySelector(
+        '[aria-label="Rename Summary ready"]',
+      ) as HTMLButtonElement
+    ).click();
     fixture.detectChanges();
-    expect(component.editingCheckpointId()).toBe('new');
+    expect(component.editingCheckpointId()).toBe("new");
 
-    keydown('Escape');
-    expect(keydown('Delete').defaultPrevented).toBeFalse();
+    keydown("Escape");
+    expect(keydown("Delete").defaultPrevented).toBeFalse();
     fixture.detectChanges();
     expect(component.deletingCheckpointId()).toBeNull();
 
-    (fixture.nativeElement.querySelector('[aria-label="Delete Summary ready"]') as HTMLButtonElement).click();
+    (
+      fixture.nativeElement.querySelector(
+        '[aria-label="Delete Summary ready"]',
+      ) as HTMLButtonElement
+    ).click();
     fixture.detectChanges();
-    expect(component.deletingCheckpointId()).toBe('new');
-    expect(fixture.nativeElement.textContent).toContain('Delete “Summary ready”?');
+    expect(component.deletingCheckpointId()).toBe("new");
+    expect(fixture.nativeElement.textContent).toContain(
+      "Delete “Summary ready”?",
+    );
   });
 
-  it('does not register the former global Inspector shortcuts', () => {
-    for (const key of ['m', 's', 'g', 'h', 'v', 'Alt', 'Delete']) {
+  it("does not register the former global Inspector shortcuts", () => {
+    for (const key of ["m", "s", "g", "h", "v", "Alt", "Delete"]) {
       expect(keydown(key).defaultPrevented).toBeFalse();
     }
-    expect(keydown('z', { ctrlKey: true }).defaultPrevented).toBeFalse();
+    expect(keydown("z", { ctrlKey: true }).defaultPrevented).toBeFalse();
     expect(component.enabled()).toBeTrue();
-    expect(component.toolMode()).toBe('none');
+    expect(component.toolMode()).toBe("none");
     expect(component.altPressed()).toBeFalse();
   });
 
-  it('clears selections, guides, and transient overlays with Escape', () => {
-    const guide = { id: 'guide-1', orientation: 'vertical' as const, position: 120 };
+  it("does not steal Escape when the Inspector canvas is already empty", () => {
+    expect(keydown("Escape").defaultPrevented).toBeFalse();
+  });
+
+  it("clears selections, guides, and transient overlays with Escape", () => {
+    const guide = {
+      id: "guide-1",
+      orientation: "vertical" as const,
+      position: 120,
+    };
     component.guides.set([guide]);
     component.selectedGuideId.set(guide.id);
     component.hoverRect.set({ left: 10, top: 20, width: 30, height: 40 });
     component.guidePreview.set(guide);
     component.altPressed.set(true);
+    fixture.detectChanges();
 
-    expect(keydown('Escape').defaultPrevented).toBeTrue();
+    expect(
+      fixture.nativeElement.querySelector(
+        '[aria-label="Vertical guide at 120 pixels"]',
+      ),
+    ).not.toBeNull();
+
+    expect(keydown("Escape").defaultPrevented).toBeTrue();
     expect(component.guides()).toEqual([]);
     expect(component.selectedGuideId()).toBeNull();
     expect(component.hoverRect()).toBeNull();
@@ -230,28 +309,40 @@ describe('inspectorComponent checkpoint command bar', () => {
     expect(component.altPressed()).toBeFalse();
   });
 
-  it('saves immediately from the command palette and shows a status toast', async () => {
-    const saved = { ...records[0], id: 'saved', name: '/summary' };
-    const save = spyOn(service, 'save').and.resolveTo(saved);
-    (fixture.nativeElement.querySelector('[aria-label="Save checkpoint"]') as HTMLButtonElement).click();
+  it("saves immediately from the command palette and shows a status toast", async () => {
+    const saved = { ...records[0], id: "saved", name: "/summary" };
+    const save = spyOn(service, "save").and.resolveTo(saved);
+    (
+      fixture.nativeElement.querySelector(
+        '[aria-label="Save checkpoint"]',
+      ) as HTMLButtonElement
+    ).click();
     await Promise.resolve();
     fixture.detectChanges();
 
     expect(save).toHaveBeenCalled();
-    expect(fixture.nativeElement.textContent).toContain('Saved “/summary”.');
+    expect(fixture.nativeElement.textContent).toContain("Saved “/summary”.");
   });
 
-  it('announces save failures as alerts', async () => {
-    const save = spyOn(service, 'save').and.callFake(async () => {
-      service.error.set('Browser storage is full. Delete old checkpoints, then try saving again.');
+  it("announces save failures as alerts", async () => {
+    const save = spyOn(service, "save").and.callFake(async () => {
+      service.error.set(
+        "Browser storage is full. Delete old checkpoints, then try saving again.",
+      );
       return null;
     });
-    (fixture.nativeElement.querySelector('[aria-label="Save checkpoint"]') as HTMLButtonElement).click();
+    (
+      fixture.nativeElement.querySelector(
+        '[aria-label="Save checkpoint"]',
+      ) as HTMLButtonElement
+    ).click();
     await Promise.resolve();
     fixture.detectChanges();
 
     expect(save).toHaveBeenCalled();
-    const alert = fixture.nativeElement.querySelector('.inspector-checkpoint-toast[role="alert"]');
-    expect(alert?.textContent).toContain('Browser storage is full');
+    const alert = fixture.nativeElement.querySelector(
+      '.inspector-checkpoint-toast[role="alert"]',
+    );
+    expect(alert?.textContent).toContain("Browser storage is full");
   });
 });

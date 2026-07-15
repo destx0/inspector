@@ -19,7 +19,7 @@ export class AppComponent {
     });
   }
 
-  installCmd = `npm install inspector-ng@0.0.8 @ngrx/store@^17.2.0`;
+  installCmd = `npm install inspector-ng@0.0.13 @ngrx/store@^17.2.0`;
 
   tsCode = `import { Component } from '@angular/core';
 import { inspectorComponent } from 'inspector-ng';
@@ -33,7 +33,6 @@ import { inspectorComponent } from 'inspector-ng';
 export class AppComponent {}`;
 
   htmlCode = `<inspector-overlay
-  [persistOnReload]="true"
   [hoverHighlightEnabled]="true"
 ></inspector-overlay>`;
 

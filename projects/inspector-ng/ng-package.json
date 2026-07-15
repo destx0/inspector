@@ -1,6 +1,10 @@
 {
   "$schema": "../../node_modules/ng-packagr/ng-package.schema.json",
   "dest": "../../dist/inspector-ng",
+  "assets": [
+    "THIRD_PARTY_NOTICES.md",
+    "LICENSES/Apache-2.0.txt"
+  ],
   "lib": {
     "entryFile": "src/public-api.ts"
   }

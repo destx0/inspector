@@ -17,7 +17,7 @@ import { inspectorComponent } from 'inspector-ng';
     </header>
 
     <main class="shell-main"><router-outlet /></main>
-    <inspector-overlay [persistOnReload]="true" />
+    <inspector-overlay />
   `,
   styles: [
     `

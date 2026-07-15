@@ -16,29 +16,25 @@
           >
             inspector-ng command palette
           </label>
-          <svg
-            class="inspector-command__search-icon inspector-command__search-icon--cat"
-            viewBox="0 0 16 16"
-            aria-hidden="true"
-          >
-            <g class="inspector-command__cat-face">
-              <path
-                d="M3.2 6.1 2.7 2.6l3 1.5A5.7 5.7 0 0 1 8 3.6c.8 0 1.6.2 2.3.5l3-1.5-.5 3.5c.5.8.7 1.7.7 2.7 0 2.8-2.4 4.5-5.5 4.5s-5.5-1.7-5.5-4.5c0-1 .2-1.9.7-2.7Z"
-              />
-              <g class="inspector-command__cat-eyes">
-                <circle cx="5.7" cy="8.3" r=".65" />
-                <circle cx="10.3" cy="8.3" r=".65" />
-              </g>
-              <path d="m6.8 10.3 1.2.7 1.2-.7M8 11v.7" />
-            </g>
-          </svg>
+          <span class="inspector-command__runcat" aria-hidden="true">
+            <img
+              class="inspector-command__runcat-sprite"
+              [src]="runcatSpriteSrc"
+              alt=""
+              draggable="false"
+            />
+          </span>
           <input
             #checkpointSearch
             id="inspector-checkpoint-search"
             type="search"
+            role="combobox"
             autocomplete="off"
             spellcheck="false"
             placeholder="inspector-ng…"
+            aria-autocomplete="list"
+            aria-haspopup="listbox"
+            [attr.aria-expanded]="commandBarOpen()"
             [value]="checkpointQuery()"
             [attr.aria-controls]="'inspector-checkpoint-results inspector-command-actions'"
             [attr.aria-activedescendant]="activeCommandResultId()"
@@ -480,6 +476,12 @@
           guide.orientation === 'horizontal' ? guide.position : null
         "
         [style.--inspector-guide]="guideColor"
+        [attr.aria-label]="
+          (guide.orientation === 'vertical' ? 'Vertical' : 'Horizontal') +
+          ' guide at ' +
+          formatValue(guide.position) +
+          ' pixels'
+        "
         (pointerdown)="startGuideDrag($event, guide)"
       >
         <span class="inspector-guide-line"></span>

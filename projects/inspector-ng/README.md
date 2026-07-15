@@ -11,7 +11,7 @@ Inspired by [ibelick](https://github.com/ibelick)'s original design.
 ## Installation
 
 ```bash
-npm install inspector-ng@0.0.8 @ngrx/store@^17.2.0
+npm install inspector-ng@0.0.13 @ngrx/store@^17.2.0
 ```
 
 For a complete new-project walkthrough with copy-paste Store, Router, Redux DevTools, state, local-package, and troubleshooting examples, see the [setup guide](https://github.com/destx0/inspector/blob/main/SETUP_GUIDE.md).
@@ -47,7 +47,6 @@ Place `<inspector-overlay>` in your root template (e.g. `app.component.html`). I
 
 <!-- Inspector overlay -->
 <inspector-overlay
-  [persistOnReload]="true"
   [hoverHighlightEnabled]="true"
 ></inspector-overlay>
 ```
@@ -84,7 +83,6 @@ A checkpoint contains the root Store value and current route. Restore dispatches
 
 | Input | Type | Default | Description |
 |---|---|---|---|
-| `persistOnReload` | `boolean` | `false` | Persist inspector state (guides, settings) to localStorage across page reloads |
 | `hoverHighlightEnabled` | `boolean` | `true` | Show a highlight rectangle when hovering over elements |
 | `highlightColor` | `string` | `"#4f8cff"` | Accent color for element selection highlights |
 | `guideColor` | `string` | `"#ff7a00"` | Color for alignment guides |
@@ -93,7 +91,6 @@ A checkpoint contains the root Store value and current route. Restore dispatches
 
 ```html
 <inspector-overlay
-  [persistOnReload]="true"
   [hoverHighlightEnabled]="true"
   highlightColor="#10b981"
   guideColor="#f59e0b"

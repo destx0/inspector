@@ -53,7 +53,7 @@ describe('NgRx checkpoints', () => {
 
   beforeEach(() => {
     repository = new MemoryCheckpointRepository();
-    router = jasmine.createSpyObj<Router>('Router', ['navigateByUrl']);
+    router = jasmine.createSpyObj<Router>('Router', ['navigateByUrl'], { url: '/current' });
     router.navigateByUrl.and.resolveTo(true);
     TestBed.configureTestingModule({
       providers: [
@@ -91,6 +91,22 @@ describe('NgRx checkpoints', () => {
     expect(await service.restore('summary')).toBeTrue();
     expect((await firstValueFrom(store.pipe(take(1)))).test.count).toBe(7);
     expect(router.navigateByUrl).toHaveBeenCalledWith('/summary?mode=review#details');
+  });
+
+  it('does not navigate when the saved route is already active', async () => {
+    repository.records = [{
+      version: 1,
+      id: 'current',
+      name: '/current',
+      route: '/current',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      state: { test: { count: 7 } },
+    }];
+
+    expect(await service.restore('current')).toBeTrue();
+    expect((await firstValueFrom(store.pipe(take(1)))).test.count).toBe(7);
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+    expect(service.error()).toBeNull();
   });
 
   it('rejects a root state that cannot be JSON serialized', async () => {

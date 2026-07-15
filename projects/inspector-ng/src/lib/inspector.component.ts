@@ -8,7 +8,6 @@ import {
   OnDestroy,
   PLATFORM_ID,
   computed,
-  effect,
   inject,
   signal,
   viewChild,
@@ -17,8 +16,6 @@ import { isPlatformBrowser } from '@angular/common';
 import {
   GUIDE_HITBOX_SIZE,
   GUIDE_SNAP_DISTANCE,
-  inspector_STATE_VERSION,
-  inspector_STORAGE_KEY,
 } from './constants';
 import {
   getInspectMeasurement,
@@ -33,8 +30,6 @@ import {
   Guide,
   GuideOrientation,
   InspectMeasurement,
-  inspectorLegacyPersistedState,
-  inspectorPersistedState,
   Rect,
   TextBlockAnnotation,
   ToolMode,
@@ -46,6 +41,7 @@ import {
 } from './checkpoints';
 import { fuzzyCheckpoints } from './checkpoint-search';
 import { createId, formatRelativeTime, formatValue } from './utils';
+import { RUNCAT_SPRITE_SRC } from './runcat';
 
 type InspectorCommandActionId = 'select' | 'type' | 'save' | 'vertical' | 'horizontal' | 'off';
 
@@ -75,6 +71,7 @@ const INSPECTOR_COMMAND_ACTIONS: readonly InspectorCommandAction[] = [
 })
 export class inspectorComponent implements OnDestroy {
   readonly Math = Math;
+  readonly runcatSpriteSrc = RUNCAT_SPRITE_SRC;
   readonly checkpointActivityAt = checkpointActivityAt;
   readonly formatValue = formatValue;
   readonly formatRelativeTime = formatRelativeTime;
@@ -86,7 +83,6 @@ export class inspectorComponent implements OnDestroy {
   @Input() highlightColor = '#4f8cff';
   @Input() guideColor = '#ff7a00';
   @Input() hoverHighlightEnabled = true;
-  @Input() persistOnReload = false;
 
   readonly checkpointService = inject(InspectorCheckpointService, { optional: true });
   readonly commandBarOpen = signal(false);
@@ -144,9 +140,6 @@ export class inspectorComponent implements OnDestroy {
   });
 
   private readonly isBrowser: boolean;
-  private readonly hydrated = signal(false);
-  private readonly history = signal<Guide[][]>([]);
-  private readonly historyIndex = signal(-1);
   private readonly handleCapturedClick = (event: MouseEvent) => {
     if (
       !event.shiftKey ||
@@ -165,78 +158,16 @@ export class inspectorComponent implements OnDestroy {
   private hoverElement: HTMLElement | null = null;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
 
-  readonly canUndo = computed(() => this.historyIndex() > 0);
-  readonly canRedo = computed(
-    () =>
-      this.historyIndex() >= 0 &&
-      this.historyIndex() < this.history().length - 1,
-  );
-
   constructor(@Inject(PLATFORM_ID) platformId: object) {
     this.isBrowser = isPlatformBrowser(platformId);
-
-    effect(() => {
-      if (!this.persistOnReload || !this.isBrowser || !this.hydrated()) {
-        return;
-      }
-
-      const payload: inspectorPersistedState = {
-        version: inspector_STATE_VERSION,
-        enabled: this.enabled(),
-        toolMode: this.toolMode(),
-        guideOrientation: this.guideOrientation(),
-        guides: this.guides(),
-        showTypography: this.showTypography(),
-      };
-
-      window.localStorage.setItem(
-        inspector_STORAGE_KEY,
-        JSON.stringify(payload),
-      );
-    });
   }
 
   ngOnInit() {
-    if (!this.isBrowser) {
-      this.hydrated.set(true);
-      return;
-    }
+    if (!this.isBrowser) return;
 
     window.addEventListener('click', this.handleCapturedClick, {
       capture: true,
     });
-
-    if (!this.persistOnReload) {
-      this.hydrated.set(true);
-      return;
-    }
-
-    const stored = window.localStorage.getItem(inspector_STORAGE_KEY);
-    if (!stored) {
-      this.hydrated.set(true);
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(stored) as
-        | inspectorPersistedState
-        | inspectorLegacyPersistedState;
-      if (parsed.version === inspector_STATE_VERSION || parsed.version === 1) {
-        this.enabled.set(true);
-        this.toolMode.set(parsed.toolMode);
-        this.guideOrientation.set(parsed.guideOrientation);
-        this.guides.set(parsed.guides ?? []);
-        this.showTypography.set(
-          parsed.version === 1 ? false : (parsed.showTypography ?? false),
-        );
-        this.recordHistory(parsed.guides ?? []);
-      }
-    } catch {
-      // ignore malformed state
-    }
-
-    this.hydrated.set(true);
-    this.refreshTypographyBlocks();
   }
 
   ngOnDestroy() {
@@ -445,7 +376,6 @@ export class inspectorComponent implements OnDestroy {
   clearGuides() {
     this.guides.set([]);
     this.selectedGuideId.set(null);
-    this.recordHistory([]);
   }
 
   trackGuide = (_index: number, guide: Guide) => guide.id;
@@ -491,10 +421,21 @@ export class inspectorComponent implements OnDestroy {
       return;
     }
 
-    if (key === 'escape') {
+    if (key === 'escape' && this.hasInspectorCanvasState()) {
       event.preventDefault();
       this.clearInspectorCanvas();
     }
+  }
+
+  private hasInspectorCanvasState(): boolean {
+    return this.guides().length > 0 ||
+      this.selectedMeasurement() !== null ||
+      this.selectedGuideId() !== null ||
+      this.hoverRect() !== null ||
+      this.distanceOverlay() !== null ||
+      this.altPressed() ||
+      this.guidePreview() !== null ||
+      this.draggingGuideId !== null;
   }
 
   private clearInspectorCanvas() {
@@ -586,7 +527,6 @@ export class inspectorComponent implements OnDestroy {
       this.hoverRect.set(rect);
     }
     this.updateDistanceOverlay();
-    this.refreshTypographyBlocks();
   }
 
   @HostListener('window:pointerup')
@@ -594,7 +534,6 @@ export class inspectorComponent implements OnDestroy {
     if (!this.draggingGuideId) {
       return;
     }
-    this.recordHistory(this.guides());
     this.draggingGuideId = null;
   }
 
@@ -852,7 +791,6 @@ export class inspectorComponent implements OnDestroy {
     const nextGuides = [...this.guides(), guide];
     this.guides.set(nextGuides);
     this.selectedGuideId.set(guide.id);
-    this.recordHistory(nextGuides);
   }
 
   private getGuidePreview(event: PointerEvent | MouseEvent): Guide {
@@ -894,35 +832,6 @@ export class inspectorComponent implements OnDestroy {
       }
     }
     return null;
-  }
-
-  private undo() {
-    if (!this.canUndo()) {
-      return;
-    }
-    const nextIndex = this.historyIndex() - 1;
-    this.historyIndex.set(nextIndex);
-    this.guides.set(this.cloneGuides(this.history()[nextIndex]));
-  }
-
-  private redo() {
-    if (!this.canRedo()) {
-      return;
-    }
-    const nextIndex = this.historyIndex() + 1;
-    this.historyIndex.set(nextIndex);
-    this.guides.set(this.cloneGuides(this.history()[nextIndex]));
-  }
-
-  private recordHistory(guides: Guide[]) {
-    const base = this.history().slice(0, this.historyIndex() + 1);
-    base.push(this.cloneGuides(guides));
-    this.history.set(base);
-    this.historyIndex.set(base.length - 1);
-  }
-
-  private cloneGuides(guides: Guide[]) {
-    return guides.map((guide) => ({ ...guide }));
   }
 
   private findMinimumCommonParent(

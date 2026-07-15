@@ -45,7 +45,7 @@ For the shortest copy-paste setup plus complete NgRx, Router, Redux DevTools, lo
 Install it in an Angular 17 application:
 
 ```bash
-npm install inspector-ng@0.0.8 @ngrx/store@^17.2.0
+npm install inspector-ng@0.0.13 @ngrx/store@^17.2.0
 ```
 
 ### Standalone application
@@ -72,12 +72,11 @@ Add the overlay once, near the end of the root template:
 <router-outlet></router-outlet>
 
 <inspector-overlay
-  [persistOnReload]="true"
   [hoverHighlightEnabled]="true"
 ></inspector-overlay>
 ```
 
-Start the application, open it in a browser, and press **M**.
+Start the application, open it in a browser, and press **Ctrl/Cmd + Shift + P**.
 
 ### NgModule application
 
@@ -108,10 +107,10 @@ pnpm ng build inspector-ng
 npm pack ./dist/inspector-ng
 ```
 
-The second command creates a file such as `inspector-ng-0.0.8.tgz`. Install that file in another Angular project:
+The second command creates a file such as `inspector-ng-0.0.13.tgz`. Install that file in another Angular project:
 
 ```bash
-npm install /absolute/path/to/inspector-ng-0.0.8.tgz
+npm install /absolute/path/to/inspector-ng-0.0.13.tgz
 ```
 
 This tests the same package contents users receive from npm.
@@ -120,7 +119,6 @@ This tests the same package contents users receive from npm.
 
 | Input | Type | Default | Purpose |
 |---|---|---:|---|
-| `persistOnReload` | `boolean` | `false` | Save guides and inspector settings in `localStorage` |
 | `hoverHighlightEnabled` | `boolean` | `true` | Highlight the element under the pointer |
 | `highlightColor` | `string` | `#4f8cff` | Selection highlight color |
 | `guideColor` | `string` | `#ff7a00` | Alignment guide color |
@@ -129,7 +127,6 @@ Example:
 
 ```html
 <inspector-overlay
-  [persistOnReload]="true"
   [hoverHighlightEnabled]="true"
   highlightColor="#10b981"
   guideColor="#f59e0b"
@@ -216,8 +213,6 @@ For later releases, increase the version again, rebuild, and repeat the publish 
 - Typography annotations
 - Horizontal and vertical alignment guides
 - Pixel-distance measurement
-- Guide undo and redo
-- Optional browser persistence
 - Angular SSR-safe browser checks
 
 ## License

@@ -92,7 +92,8 @@ export class IndexedDbCheckpointRepository extends InspectorCheckpointRepository
     }
     if (this.databasePromise) return this.databasePromise;
 
-    this.databasePromise = new Promise<IDBDatabase>((resolve, reject) => {
+    let rejected = false;
+    const databasePromise = new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
       request.onupgradeneeded = () => {
         const database = request.result;
@@ -100,11 +101,30 @@ export class IndexedDbCheckpointRepository extends InspectorCheckpointRepository
         const store = database.createObjectStore(STORE_NAME, { keyPath: 'id' });
         store.createIndex('createdAt', 'createdAt');
       };
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error ?? new Error('IndexedDB could not be opened.'));
-      request.onblocked = () => reject(new Error('IndexedDB is blocked by another open tab.'));
+      request.onsuccess = () => {
+        if (rejected) {
+          request.result.close();
+          return;
+        }
+        request.result.onversionchange = () => request.result.close();
+        resolve(request.result);
+      };
+      request.onerror = () => {
+        rejected = true;
+        reject(request.error ?? new Error('IndexedDB could not be opened.'));
+      };
+      request.onblocked = () => {
+        rejected = true;
+        reject(new Error('IndexedDB is blocked by another open tab.'));
+      };
     });
-    return this.databasePromise;
+    this.databasePromise = databasePromise;
+    void databasePromise.catch(() => {
+      if (this.databasePromise === databasePromise) {
+        this.databasePromise = null;
+      }
+    });
+    return databasePromise;
   }
 
   private request<T>(request: IDBRequest<T>): Promise<T> {
@@ -205,7 +225,11 @@ export class InspectorCheckpointService {
         `“${checkpoint.name}” could not be decoded. Delete it and save a new checkpoint.`,
       );
       this.store.dispatch({ type: RESTORE_CHECKPOINT, state } as RestoreCheckpointAction);
-      if (this.router && !await this.router.navigateByUrl(checkpoint.route)) {
+      if (
+        this.router &&
+        this.router.url !== checkpoint.route &&
+        !await this.router.navigateByUrl(checkpoint.route)
+      ) {
         throw new Error(`The state was restored, but navigation to “${checkpoint.route}” was cancelled.`);
       }
       const recentlyUsedCheckpoint = {

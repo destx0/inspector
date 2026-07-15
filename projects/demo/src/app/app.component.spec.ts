@@ -14,16 +14,17 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have the 'demo' title`, () => {
+  it('provides the current install command', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('demo');
+    expect(app.installCmd).toContain('inspector-ng@0.0.13');
   });
 
-  it('should render title', () => {
+  it('renders the inspector documentation', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, demo');
+    expect(compiled.querySelector('.brand-heading')?.textContent).toContain('inspector-ng');
+    expect(compiled.querySelector('inspector-overlay')).not.toBeNull();
   });
 });
