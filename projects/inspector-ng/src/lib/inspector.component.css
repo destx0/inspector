@@ -34,7 +34,7 @@
 
 .inspector-command-dialog {
   --command-surface: oklch(17.5% 0.012 280);
-  --command-surface-active: oklch(26% 0.02 265);
+  --command-surface-active: oklch(25% 0.012 280);
   --command-edge: oklch(100% 0 0 / 0.08);
   --command-text: oklch(96% 0.005 280);
   --command-muted: oklch(68% 0.014 280);
@@ -102,35 +102,61 @@
   border-bottom: 1px solid var(--command-edge);
 }
 
-.inspector-command__runcat {
-  width: 20px;
-  height: 20px;
+.inspector-command__pet-switcher {
+  display: block;
+  width: 28px;
+  height: 28px;
   flex: 0 0 auto;
+  padding: 0;
   overflow: hidden;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
   opacity: 0.72;
-  transition: opacity 140ms var(--inspector-ease);
+  transition:
+    opacity 140ms var(--inspector-ease),
+    transform 100ms var(--inspector-ease);
 }
 
-.inspector-command__runcat-sprite {
+.inspector-command__pet-sprite {
   display: block;
   width: 500%;
   height: 100%;
   max-width: none;
+  image-rendering: pixelated;
   user-select: none;
   transform: translateX(0);
 }
 
-.inspector-command__search:focus-within .inspector-command__runcat {
+.inspector-command__search:focus-within .inspector-command__pet-switcher,
+.inspector-command__pet-switcher:hover,
+.inspector-command__pet-switcher:focus-visible {
   opacity: 1;
 }
 
+.inspector-command__pet-switcher:hover,
+.inspector-command__pet-switcher:focus-visible {
+  background: oklch(72% 0.13 255 / 0.12);
+}
+
+.inspector-command__pet-switcher:active {
+  transform: scale(0.94);
+}
+
+.inspector-command__pet-switcher:focus-visible {
+  outline: 1px solid var(--command-accent);
+  outline-offset: 1px;
+}
+
 @media (prefers-reduced-motion: no-preference) {
-  .inspector-command__runcat-sprite {
-    animation: inspector-runcat-run 400ms steps(1, end) infinite;
+  .inspector-command__search:focus-within
+    .inspector-command__pet-sprite {
+    animation: inspector-pet-cycle 1s steps(1, end) infinite;
   }
 }
 
-@keyframes inspector-runcat-run {
+@keyframes inspector-pet-cycle {
   0%, 19.99% { transform: translateX(0); }
   20%, 39.99% { transform: translateX(-20%); }
   40%, 59.99% { transform: translateX(-40%); }
@@ -190,6 +216,7 @@
 
 .inspector-command-row.is-active {
   background: var(--command-surface-active);
+  box-shadow: inset 0 0 0 1px oklch(72% 0.13 255 / 0.62);
 }
 
 .inspector-command-row.is-busy {
@@ -244,8 +271,8 @@
   flex: 0 0 auto;
 }
 
-.inspector-command-row.is-active .inspector-command-row__activity {
-  color: var(--command-muted);
+.inspector-command-row.is-active .inspector-command-row__meta {
+  color: oklch(82% 0.012 280);
 }
 
 .inspector-command-row__actions,
@@ -408,9 +435,11 @@
   color: oklch(88% 0.05 255);
 }
 
-.inspector-command-action.is-selected {
+.inspector-command-action.is-selected,
+.inspector-command-action.is-selected:hover:not(:disabled) {
   background: var(--command-surface-active);
   color: var(--command-text);
+  box-shadow: inset 0 0 0 1px oklch(72% 0.13 255 / 0.62);
 }
 
 .inspector-command-action--danger:hover:not(:disabled) {
@@ -476,11 +505,11 @@
     transform: none;
   }
 
-  .inspector-command__runcat {
+  .inspector-command__pet-switcher {
     transition: none;
   }
 
-  .inspector-command__runcat-sprite {
+  .inspector-command__pet-sprite {
     animation: none;
     transform: translateX(0);
   }
@@ -718,4 +747,172 @@
 
 .inspector-guide--selected .inspector-guide-line {
   box-shadow: 0 0 0 1px oklch(100% 0 0 / 0.5);
+}
+
+/*
+ * Keep the compact chrome on smaller viewports, but give desktop-resolution
+ * Inspector sessions 1.75x visual weight to remain legible at a distance.
+ * Measurement geometry and guide positions intentionally stay unscaled.
+ */
+@media (min-width: 769px) and (min-height: 769px) {
+  :host {
+    --inspector-radius: 14px;
+    --inspector-shadow: 0 21px 56px oklch(6% 0.02 280 / 0.5);
+  }
+
+  .inspector-command-dialog {
+    inset-block-start: max(10vh, 84px);
+    width: min(735px, calc(100vw - 42px));
+    max-height: min(630px, calc(100vh - 112px));
+  }
+
+  .inspector-command {
+    max-height: min(630px, calc(100vh - 112px));
+  }
+
+  .inspector-command__search {
+    gap: 14px;
+    min-height: 70px;
+    padding: 0 19.25px;
+  }
+
+  .inspector-command__pet-switcher {
+    width: 42px;
+    height: 42px;
+  }
+
+  .inspector-command__search input {
+    height: 68.25px;
+    font-size: 22.75px;
+  }
+
+  .inspector-command__results {
+    max-height: 455px;
+    padding: 8.75px;
+  }
+
+  .inspector-command-row {
+    gap: 10.5px;
+    min-height: 59.5px;
+    padding: 0 12.25px 0 15.75px;
+    border-radius: 8.75px;
+  }
+
+  .inspector-command-row__content {
+    gap: 14px;
+  }
+
+  .inspector-command-row__name,
+  .inspector-command-row__confirm {
+    font-size: 21px;
+  }
+
+  .inspector-command-row__meta {
+    gap: 7px;
+    font-size: 19.25px;
+  }
+
+  .inspector-command-row__actions,
+  .inspector-command-row__confirm-actions {
+    gap: 1.75px;
+  }
+
+  .inspector-command-row button {
+    width: 38.5px;
+    min-height: 38.5px;
+    border-radius: 7px;
+    font-size: 17.5px;
+  }
+
+  .inspector-command-row button svg {
+    width: 19.25px;
+    height: 19.25px;
+  }
+
+  .inspector-command-row button.is-danger,
+  .inspector-command-row__confirm-actions button:not(.is-danger) {
+    padding: 0 12.25px;
+    font-size: 19.25px;
+  }
+
+  .inspector-command-row__rename {
+    min-height: 45.5px;
+    padding-inline: 10.5px;
+    border-radius: 7px;
+    font-size: 21px;
+  }
+
+  .inspector-command__message {
+    padding: 28px 17.5px;
+    font-size: 21px;
+  }
+
+  .inspector-command__message--error {
+    padding: 10.5px 17.5px;
+    font-size: 19.25px;
+  }
+
+  .inspector-command__actions {
+    gap: 3.5px;
+    padding: 7px;
+  }
+
+  .inspector-command-action {
+    min-height: 49px;
+    gap: 7px;
+    padding: 0 7px;
+    border-radius: 8.75px;
+    font-size: 17.5px;
+  }
+
+  .inspector-command-action svg {
+    width: 19.25px;
+    height: 19.25px;
+  }
+
+  .inspector-checkpoint-toast {
+    top: 17.5px;
+    padding: 8.75px 17.5px;
+    font-size: 19.25px;
+  }
+
+  .inspector-label {
+    transform: translateY(calc(-100% - 10.5px));
+    max-width: min(665px, calc(100vw - 35px));
+    padding: 7px 12.25px;
+    font-size: 17.5px;
+  }
+
+  .inspector-box-tag {
+    padding: 5.25px 8.75px;
+    font-size: 15.75px;
+  }
+
+  .inspector-box-tag--padding {
+    transform: translateY(0);
+  }
+
+  .inspector-text-chip {
+    gap: 8.75px;
+    padding: 5.25px 10.5px;
+    font-size: 15.75px;
+  }
+
+  .inspector-text-chip__swatch {
+    width: 12.25px;
+    height: 12.25px;
+  }
+
+  .inspector-distance-tag {
+    padding: 5.25px 10.5px;
+    font-size: 15.75px;
+  }
+
+  .inspector-guide--vertical {
+    width: 24.5px;
+  }
+
+  .inspector-guide--horizontal {
+    height: 24.5px;
+  }
 }

@@ -102,6 +102,8 @@ A checkpoint contains the root Store value and current route. Restore dispatches
 | Key | Action |
 |---|---|
 | `Ctrl/Cmd + Shift + P` | Open the Inspector command palette when configured |
+| `Alt` (hold) | Measure the pixel distance between the selected and hovered elements in Select mode |
+| `Ctrl/Cmd + click` | Select the minimum common parent of the current selection and clicked element |
 | `Esc` | Clear selections, guides, and transient overlays |
 
 ## Features
@@ -109,6 +111,7 @@ A checkpoint contains the root Store value and current route. Restore dispatches
 - **Element Inspection** — Click any element to see its bounding box, padding, margin, font size, line height, color, and more.
 - **Typography Overlay** — Annotate all visible text blocks with their computed typography styles.
 - **Alignment Guides** — Place draggable vertical/horizontal guides with snap-to behavior.
+- **Distance Measurement** — Hold `Alt` in Select mode to measure between the selected and hovered elements.
 - **Gap Detection** — Detects and displays flex/grid gap values.
 - **State Persistence** — Optionally saves and restores state across page reloads.
 - **SSR-Safe** — Uses `isPlatformBrowser` to avoid running on the server.

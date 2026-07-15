@@ -41,6 +41,17 @@ function keydown(key: string, options: KeyboardEventInit = {}): KeyboardEvent {
   return event;
 }
 
+function keyup(key: string, options: KeyboardEventInit = {}): KeyboardEvent {
+  const event = new KeyboardEvent("keyup", {
+    key,
+    bubbles: true,
+    cancelable: true,
+    ...options,
+  });
+  window.dispatchEvent(event);
+  return event;
+}
+
 describe("inspectorComponent without checkpoints", () => {
   it("does not render checkpoint controls or steal Ctrl+Shift+P", async () => {
     await TestBed.configureTestingModule({
@@ -116,9 +127,18 @@ describe("inspectorComponent checkpoint command bar", () => {
     expect((document.activeElement as HTMLInputElement).placeholder).toBe(
       "inspector-ng…",
     );
-    expect(
-      fixture.nativeElement.querySelector(".inspector-command__runcat-sprite"),
-    ).not.toBeNull();
+    const petSwitcher = fixture.nativeElement.querySelector(
+      ".inspector-command__pet-switcher",
+    );
+    expect(petSwitcher).not.toBeNull();
+    expect(petSwitcher.getAttribute("aria-label")).toBe(
+      "Change pet. Current pet: Measuring caterpillar",
+    );
+    const petSprite = petSwitcher.querySelector(
+      ".inspector-command__pet-sprite",
+    ) as HTMLImageElement;
+    expect(petSprite).not.toBeNull();
+    expect(petSprite.getAttribute("aria-hidden")).toBe("true");
     expect(
       fixture.nativeElement.querySelectorAll(".inspector-command-row").length,
     ).toBe(2);
@@ -145,6 +165,71 @@ describe("inspectorComponent checkpoint command bar", () => {
     expect(component.enabled()).toBeFalse();
     expect(component.commandBarOpen()).toBeTrue();
     input.remove();
+  });
+
+  it("cycles through the generated pets and returns focus to search", async () => {
+    await openCommandBar();
+    const petSwitcher = fixture.nativeElement.querySelector(
+      ".inspector-command__pet-switcher",
+    ) as HTMLButtonElement;
+    const sprite = petSwitcher.querySelector(
+      ".inspector-command__pet-sprite",
+    ) as HTMLImageElement;
+    const search = fixture.nativeElement.querySelector(
+      "#inspector-checkpoint-search",
+    ) as HTMLInputElement;
+    const firstSpriteSrc = sprite.src;
+
+    for (const name of [
+      "Pixel cat",
+      "Corgi",
+      "Bunny",
+      "Fox",
+      "Panda",
+      "Frog",
+      "Axolotl",
+      "Raccoon",
+      "Duckling",
+      "Turtle",
+      "Hedgehog",
+      "Red panda",
+      "Penguin",
+      "Otter",
+      "Capybara",
+      "Shiba inu",
+      "Mouse",
+      "Hamster",
+      "Koala",
+      "Sloth",
+      "Baby seal",
+      "Octopus",
+      "Crab",
+      "Bumblebee",
+      "Moth",
+      "Tiny bat",
+      "Owl",
+      "Parrot",
+      "Chameleon",
+      "Gecko",
+      "Snail",
+      "Baby triceratops",
+      "Alpaca",
+    ]) {
+      petSwitcher.click();
+      fixture.detectChanges();
+      expect(petSwitcher.getAttribute("aria-label")).toBe(
+        `Change pet. Current pet: ${name}`,
+      );
+      expect(document.activeElement).toBe(search);
+    }
+
+    expect(sprite.src).not.toBe(firstSpriteSrc);
+    petSwitcher.click();
+    fixture.detectChanges();
+    expect(petSwitcher.getAttribute("aria-label")).toBe(
+      "Change pet. Current pet: Measuring caterpillar",
+    );
+    expect(sprite.src).toBe(firstSpriteSrc);
   });
 
   it("filters names and clamps arrow navigation", async () => {
@@ -206,9 +291,19 @@ describe("inspectorComponent checkpoint command bar", () => {
   it("uses left and right arrows within the horizontal action strip", async () => {
     await openCommandBar();
     expect(component.activeCommandResultId()).toBe("inspector-checkpoint-new");
+    expect(
+      fixture.nativeElement.querySelector(".inspector-command-row.is-active")
+        ?.id,
+    ).toBe("inspector-checkpoint-new");
 
     keydown("ArrowRight");
+    fixture.detectChanges();
     expect(component.activeCommandResultId()).toBe("inspector-action-save");
+    expect(
+      fixture.nativeElement.querySelector(
+        ".inspector-command-action.is-selected",
+      )?.id,
+    ).toBe("inspector-action-save");
 
     keydown("ArrowRight");
     expect(component.activeCommandResultId()).toBe("inspector-action-select");
@@ -268,14 +363,75 @@ describe("inspectorComponent checkpoint command bar", () => {
     );
   });
 
-  it("does not register the former global Inspector shortcuts", () => {
-    for (const key of ["m", "s", "g", "h", "v", "Alt", "Delete"]) {
+  it("does not register the removed global Inspector shortcuts", () => {
+    for (const key of ["m", "s", "g", "h", "v", "Delete"]) {
       expect(keydown(key).defaultPrevented).toBeFalse();
     }
     expect(keydown("z", { ctrlKey: true }).defaultPrevented).toBeFalse();
     expect(component.enabled()).toBeTrue();
     expect(component.toolMode()).toBe("none");
     expect(component.altPressed()).toBeFalse();
+  });
+
+  it("measures the distance from the selected element while Alt is held", () => {
+    const selected = document.createElement("div");
+    const hovered = document.createElement("div");
+    document.body.append(selected, hovered);
+    spyOn(selected, "getBoundingClientRect").and.returnValue(
+      new DOMRect(10, 20, 30, 40),
+    );
+    spyOn(hovered, "getBoundingClientRect").and.returnValue(
+      new DOMRect(70, 80, 20, 20),
+    );
+    spyOn(document, "elementsFromPoint").and.returnValues(
+      [selected],
+      [hovered],
+    );
+    component.setToolMode("select");
+
+    component.handleClick(new MouseEvent("click", { clientX: 15, clientY: 25 }));
+    component.handlePointerMove(
+      new PointerEvent("pointermove", { clientX: 75, clientY: 85 }),
+    );
+    expect(component.distanceOverlay()).toBeNull();
+
+    expect(keydown("Alt").defaultPrevented).toBeFalse();
+    expect(component.altPressed()).toBeTrue();
+    expect(component.distanceOverlay()?.horizontal?.value).toBe(30);
+    expect(component.distanceOverlay()?.vertical?.value).toBe(20);
+
+    keyup("Alt");
+    expect(component.altPressed()).toBeFalse();
+    expect(component.distanceOverlay()).toBeNull();
+    selected.remove();
+    hovered.remove();
+  });
+
+  it("selects the minimum common parent with Ctrl+click in selection mode", () => {
+    const parent = document.createElement("section");
+    const first = document.createElement("button");
+    const second = document.createElement("button");
+    parent.append(first, second);
+    document.body.appendChild(parent);
+    spyOn(parent, "getBoundingClientRect").and.returnValue(
+      new DOMRect(10, 10, 100, 50),
+    );
+    spyOn(first, "getBoundingClientRect").and.returnValue(
+      new DOMRect(10, 10, 40, 50),
+    );
+    spyOn(second, "getBoundingClientRect").and.returnValue(
+      new DOMRect(70, 10, 40, 50),
+    );
+    spyOn(document, "elementsFromPoint").and.returnValues([first], [second]);
+    component.setToolMode("select");
+
+    component.handleClick(new MouseEvent("click", { clientX: 20, clientY: 20 }));
+    component.handleClick(
+      new MouseEvent("click", { clientX: 80, clientY: 20, ctrlKey: true }),
+    );
+
+    expect(component.selectedMeasurement()?.label).toBe("section");
+    parent.remove();
   });
 
   it("does not steal Escape when the Inspector canvas is already empty", () => {

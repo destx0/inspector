@@ -138,6 +138,8 @@ Example:
 | Key | Action |
 |---|---|
 | `Ctrl/Cmd + Shift + P` | Open the Inspector command palette (when checkpoint providers are installed) |
+| `Alt` (hold) | Measure the pixel distance between the selected and hovered elements in Select mode |
+| `Ctrl/Cmd + click` | Select the minimum common parent of the current selection and clicked element |
 | `Esc` | Clear selections, guides, and transient overlays |
 
 ## Optional NgRx checkpoints

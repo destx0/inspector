@@ -16,14 +16,21 @@
           >
             inspector-ng command palette
           </label>
-          <span class="inspector-command__runcat" aria-hidden="true">
+          <button
+            type="button"
+            class="inspector-command__pet-switcher"
+            [attr.aria-label]="'Change pet. Current pet: ' + activePet().name"
+            [title]="'Change pet: ' + activePet().name"
+            (click)="cyclePet($event)"
+          >
             <img
-              class="inspector-command__runcat-sprite"
-              [src]="runcatSpriteSrc"
+              class="inspector-command__pet-sprite"
+              [src]="activePet().spriteSrc"
               alt=""
+              aria-hidden="true"
               draggable="false"
             />
-          </span>
+          </button>
           <input
             #checkpointSearch
             id="inspector-checkpoint-search"

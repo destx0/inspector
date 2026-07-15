@@ -41,7 +41,12 @@ import {
 } from './checkpoints';
 import { fuzzyCheckpoints } from './checkpoint-search';
 import { createId, formatRelativeTime, formatValue } from './utils';
-import { RUNCAT_SPRITE_SRC } from './runcat';
+import { MEASURE_CATERPILLAR_SPRITE_SRC } from './measure-caterpillar';
+import { CAT_PET_SPRITE_SRC } from './pet-cat';
+import { DOG_PET_SPRITE_SRC } from './pet-dog';
+import { BUNNY_PET_SPRITE_SRC } from './pet-bunny';
+import { GENERATED_PET_SPRITES } from './generated-pets';
+import { GENERATED_EXTRA_PET_SPRITES } from './generated-pets-extra';
 
 type InspectorCommandActionId = 'select' | 'type' | 'save' | 'vertical' | 'horizontal' | 'off';
 
@@ -61,6 +66,145 @@ const INSPECTOR_COMMAND_ACTIONS: readonly InspectorCommandAction[] = [
   { id: 'off', label: 'Off', ariaLabel: 'Disable inspector', keywords: 'off disable inspector power' },
 ];
 
+const INSPECTOR_PETS = [
+  {
+    name: 'Measuring caterpillar',
+    spriteSrc: MEASURE_CATERPILLAR_SPRITE_SRC,
+  },
+  {
+    name: 'Pixel cat',
+    spriteSrc: CAT_PET_SPRITE_SRC,
+  },
+  {
+    name: 'Corgi',
+    spriteSrc: DOG_PET_SPRITE_SRC,
+  },
+  {
+    name: 'Bunny',
+    spriteSrc: BUNNY_PET_SPRITE_SRC,
+  },
+  {
+    name: 'Fox',
+    spriteSrc: GENERATED_PET_SPRITES.fox,
+  },
+  {
+    name: 'Panda',
+    spriteSrc: GENERATED_PET_SPRITES.panda,
+  },
+  {
+    name: 'Frog',
+    spriteSrc: GENERATED_PET_SPRITES.frog,
+  },
+  {
+    name: 'Axolotl',
+    spriteSrc: GENERATED_PET_SPRITES.axolotl,
+  },
+  {
+    name: 'Raccoon',
+    spriteSrc: GENERATED_PET_SPRITES.raccoon,
+  },
+  {
+    name: 'Duckling',
+    spriteSrc: GENERATED_PET_SPRITES.duckling,
+  },
+  {
+    name: 'Turtle',
+    spriteSrc: GENERATED_PET_SPRITES.turtle,
+  },
+  {
+    name: 'Hedgehog',
+    spriteSrc: GENERATED_PET_SPRITES.hedgehog,
+  },
+  {
+    name: 'Red panda',
+    spriteSrc: GENERATED_PET_SPRITES['red-panda'],
+  },
+  {
+    name: 'Penguin',
+    spriteSrc: GENERATED_PET_SPRITES.penguin,
+  },
+  {
+    name: 'Otter',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.otter,
+  },
+  {
+    name: 'Capybara',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.capybara,
+  },
+  {
+    name: 'Shiba inu',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.shiba,
+  },
+  {
+    name: 'Mouse',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.mouse,
+  },
+  {
+    name: 'Hamster',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.hamster,
+  },
+  {
+    name: 'Koala',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.koala,
+  },
+  {
+    name: 'Sloth',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.sloth,
+  },
+  {
+    name: 'Baby seal',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.seal,
+  },
+  {
+    name: 'Octopus',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.octopus,
+  },
+  {
+    name: 'Crab',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.crab,
+  },
+  {
+    name: 'Bumblebee',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.bee,
+  },
+  {
+    name: 'Moth',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.moth,
+  },
+  {
+    name: 'Tiny bat',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.bat,
+  },
+  {
+    name: 'Owl',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.owl,
+  },
+  {
+    name: 'Parrot',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.parrot,
+  },
+  {
+    name: 'Chameleon',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.chameleon,
+  },
+  {
+    name: 'Gecko',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.gecko,
+  },
+  {
+    name: 'Snail',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.snail,
+  },
+  {
+    name: 'Baby triceratops',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.triceratops,
+  },
+  {
+    name: 'Alpaca',
+    spriteSrc: GENERATED_EXTRA_PET_SPRITES.alpaca,
+  },
+] as const;
+
 @Component({
   selector: 'inspector-overlay',
   standalone: true,
@@ -71,7 +215,6 @@ const INSPECTOR_COMMAND_ACTIONS: readonly InspectorCommandAction[] = [
 })
 export class inspectorComponent implements OnDestroy {
   readonly Math = Math;
-  readonly runcatSpriteSrc = RUNCAT_SPRITE_SRC;
   readonly checkpointActivityAt = checkpointActivityAt;
   readonly formatValue = formatValue;
   readonly formatRelativeTime = formatRelativeTime;
@@ -93,6 +236,8 @@ export class inspectorComponent implements OnDestroy {
   readonly renameDraft = signal('');
   readonly checkpointToast = signal<string | null>(null);
   readonly checkpointToastIsError = signal(false);
+  readonly petIndex = signal(0);
+  readonly activePet = computed(() => INSPECTOR_PETS[this.petIndex()]);
   readonly filteredCheckpoints = computed(() =>
     fuzzyCheckpoints(
       this.checkpointService?.checkpoints() ?? [],
@@ -252,6 +397,12 @@ export class inspectorComponent implements OnDestroy {
     this.editingCheckpointId.set(null);
     this.deletingCheckpointId.set(null);
     this.checkpointService?.clearError();
+  }
+
+  cyclePet(event?: Event) {
+    event?.stopPropagation();
+    this.petIndex.update((index) => (index + 1) % INSPECTOR_PETS.length);
+    this.checkpointSearch()?.nativeElement.focus();
   }
 
   setActiveCheckpoint(index: number) {
@@ -421,9 +572,27 @@ export class inspectorComponent implements OnDestroy {
       return;
     }
 
+    if (
+      event.key === 'Alt' &&
+      this.enabled() &&
+      this.toolMode() === 'select'
+    ) {
+      this.altPressed.set(true);
+      this.updateDistanceOverlay();
+      return;
+    }
+
     if (key === 'escape' && this.hasInspectorCanvasState()) {
       event.preventDefault();
       this.clearInspectorCanvas();
+    }
+  }
+
+  @HostListener('window:keyup', ['$event'])
+  handleKeyup(event: KeyboardEvent) {
+    if (event.key === 'Alt') {
+      this.altPressed.set(false);
+      this.distanceOverlay.set(null);
     }
   }
 
