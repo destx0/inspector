@@ -287,50 +287,36 @@ describe("inspectorComponent checkpoint command bar", () => {
     expect(component.activeCommandIndex()).toBe(0);
   });
 
-  it("hides route metadata when it duplicates the checkpoint name", () => {
-    expect(
-      component.shouldShowCheckpointRoute({ ...records[0], name: "/summary" }),
-    ).toBeFalse();
-    expect(
-      component.shouldShowCheckpointRoute({ ...records[0], name: "SUMMARY/" }),
-    ).toBeFalse();
-    expect(component.shouldShowCheckpointRoute(records[0])).toBeTrue();
-  });
-
-  it("reveals a renamed checkpoint route only on the active row", async () => {
+  it("hides route metadata and truncates long names from the start", async () => {
     await openCommandBar();
 
-    const activeRoute = fixture.nativeElement.querySelector(
-      "#inspector-checkpoint-new .inspector-command-row__route",
+    const activeContent = fixture.nativeElement.querySelector(
+      "#inspector-checkpoint-new .inspector-command-row__content",
     ) as HTMLElement;
-    expect(activeRoute?.textContent?.trim()).toBe("/summary");
-    expect(activeRoute.title).toBe("/summary");
-    expect(
-      fixture.nativeElement.querySelector(
-        "#inspector-checkpoint-old .inspector-command-row__route",
-      ),
-    ).toBeNull();
+    const activeName = activeContent.querySelector(
+      ".inspector-command-row__name",
+    ) as HTMLElement;
+    const activeActivity = activeContent.querySelector(
+      ".inspector-command-row__activity",
+    ) as HTMLElement;
+    const activeActions = fixture.nativeElement.querySelector(
+      "#inspector-checkpoint-new .inspector-command-row__actions",
+    ) as HTMLElement;
+    const nameDirection = activeName.querySelector("bdi") as HTMLElement;
+    const nameStyle = getComputedStyle(activeName);
 
-    keydown("ArrowDown");
-    fixture.detectChanges();
-
     expect(
-      fixture.nativeElement.querySelector(
-        "#inspector-checkpoint-new .inspector-command-row__route",
-      ),
+      fixture.nativeElement.querySelector(".inspector-command-row__route"),
     ).toBeNull();
-    expect(
-      fixture.nativeElement.querySelector(
-        "#inspector-checkpoint-old .inspector-command-row__route",
-      )?.textContent?.trim(),
-    ).toBe("/workflow");
-    expect(
-      getComputedStyle(
-        fixture.nativeElement.querySelector(
-          "#inspector-checkpoint-old .inspector-command-row__name",
-        ),
-      ).direction,
-    ).toBe("rtl");
+    expect(nameStyle.direction).toBe("rtl");
+    expect(nameStyle.textOverflow).toBe("ellipsis");
+    expect(nameDirection.dir).toBe("ltr");
+    expect(activeName.nextElementSibling).toBe(activeActivity);
+    expect(getComputedStyle(activeActions).opacity).toBe("1");
+    expect(getComputedStyle(activeActions).pointerEvents).toBe("auto");
+    expect(parseFloat(getComputedStyle(activeActivity).fontSize)).toBeLessThan(
+      parseFloat(nameStyle.fontSize),
+    );
   });
 
   it("searches Inspector actions after checkpoint results and runs the active match", async () => {
@@ -429,7 +415,13 @@ describe("inspectorComponent checkpoint command bar", () => {
     await openCommandBar();
     expect(keydown("F2").defaultPrevented).toBeTrue();
     fixture.detectChanges();
+    const renameInput = fixture.nativeElement.querySelector(
+      ".inspector-command-row__rename",
+    ) as HTMLInputElement;
     expect(component.editingCheckpointId()).toBe("new");
+    expect(document.activeElement).toBe(renameInput);
+    expect(renameInput.selectionStart).toBe(0);
+    expect(renameInput.selectionEnd).toBe(renameInput.value.length);
 
     keydown("Escape");
     const deleteCheckpoint = spyOn(service, "delete").and.resolveTo(true);
@@ -507,8 +499,20 @@ describe("inspectorComponent checkpoint command bar", () => {
     const distanceTag = fixture.nativeElement.querySelector(
       ".inspector-distance-tag",
     ) as HTMLElement;
+    const horizontalLine = fixture.nativeElement.querySelector(
+      ".inspector-distance-line--horizontal",
+    ) as HTMLElement;
+    const verticalLine = fixture.nativeElement.querySelector(
+      ".inspector-distance-line--vertical",
+    ) as HTMLElement;
+    const verticalTag = fixture.nativeElement.querySelector(
+      ".inspector-distance-tag--vertical",
+    ) as HTMLElement;
     const distanceTagStyle = getComputedStyle(distanceTag);
-    expect(distanceTagStyle.backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
+    expect(distanceTag.style.top).toBe(horizontalLine.style.top);
+    expect(verticalTag.style.left).toBe(verticalLine.style.left);
+    expect(distanceTagStyle.backgroundColor).toContain("/ 0.72");
+    expect(distanceTagStyle.backdropFilter).toBe("blur(4px)");
     expect(distanceTagStyle.textShadow).toBe("none");
 
     keyup("Alt");

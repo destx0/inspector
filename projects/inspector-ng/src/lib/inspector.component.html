@@ -118,6 +118,7 @@
                   </span>
                 } @else if (editingCheckpointId() === checkpoint.id) {
                   <input
+                    #checkpointRename
                     class="inspector-command-row__rename"
                     aria-label="Checkpoint name"
                     [value]="renameDraft()"
@@ -130,14 +131,16 @@
                       class="inspector-command-row__name"
                       [title]="checkpoint.name"
                     >
-                      @if (
-                        checkpointService.busy() &&
-                        activeCommandIndex() === index
-                      ) {
-                        Restoring…
-                      } @else {
-                        {{ checkpoint.name }}
-                      }
+                      <bdi dir="ltr">
+                        @if (
+                          checkpointService.busy() &&
+                          activeCommandIndex() === index
+                        ) {
+                          Restoring…
+                        } @else {
+                          {{ checkpoint.name }}
+                        }
+                      </bdi>
                     </span>
                     <span class="inspector-command-row__activity">
                       {{ checkpoint.lastUsedAt ? "Used" : "Saved" }}
@@ -145,16 +148,6 @@
                         formatRelativeTime(checkpointActivityAt(checkpoint))
                       }}
                     </span>
-                    @if (
-                      activeCommandIndex() === index &&
-                      shouldShowCheckpointRoute(checkpoint)
-                    ) {
-                      <span
-                        class="inspector-command-row__route"
-                        [title]="checkpoint.route"
-                        >{{ checkpoint.route }}</span
-                      >
-                    }
                   </span>
                   <span class="inspector-command-row__actions">
                     <button
@@ -405,7 +398,7 @@
         <div
           class="inspector-distance-tag"
           [style.left.px]="(horizontal.x1! + horizontal.x2!) / 2"
-          [style.top.px]="horizontal.y! + 10"
+          [style.top.px]="horizontal.y!"
         >
           {{ formatValue(horizontal.value) }}
         </div>
@@ -422,7 +415,7 @@
         ></div>
         <div
           class="inspector-distance-tag inspector-distance-tag--vertical"
-          [style.left.px]="vertical.x! + 10"
+          [style.left.px]="vertical.x!"
           [style.top.px]="(vertical.y1! + vertical.y2!) / 2"
         >
           {{ formatValue(vertical.value) }}

@@ -8,6 +8,7 @@ import {
   OnDestroy,
   PLATFORM_ID,
   computed,
+  effect,
   inject,
   signal,
   viewChild,
@@ -221,6 +222,7 @@ export class inspectorComponent implements OnDestroy {
   readonly overlayRoot = viewChild<ElementRef<HTMLElement>>('overlayRoot');
   readonly checkpointDialog = viewChild<ElementRef<HTMLDialogElement>>('checkpointDialog');
   readonly checkpointSearch = viewChild<ElementRef<HTMLInputElement>>('checkpointSearch');
+  readonly checkpointRename = viewChild<ElementRef<HTMLInputElement>>('checkpointRename');
 
   @Input() highlightColor = '#4f8cff';
   @Input() guideColor = '#ff7a00';
@@ -305,6 +307,12 @@ export class inspectorComponent implements OnDestroy {
 
   constructor(@Inject(PLATFORM_ID) platformId: object) {
     this.isBrowser = isPlatformBrowser(platformId);
+    effect(() => {
+      if (!this.editingCheckpointId()) return;
+      const input = this.checkpointRename()?.nativeElement;
+      input?.focus();
+      input?.select();
+    });
   }
 
   ngOnInit() {
@@ -410,11 +418,6 @@ export class inspectorComponent implements OnDestroy {
     this.activeCommandIndex.set(index);
   }
 
-  shouldShowCheckpointRoute(checkpoint: InspectorCheckpointRecord) {
-    if (!checkpoint.route.trim()) return false;
-    return this.normalizeCheckpointLabel(checkpoint.name) !== this.normalizeCheckpointLabel(checkpoint.route);
-  }
-
   setActiveInspectorAction(index: number) {
     this.activeCommandIndex.set(this.filteredCheckpoints().length + index);
   }
@@ -463,13 +466,6 @@ export class inspectorComponent implements OnDestroy {
     this.editingCheckpointId.set(checkpoint.id);
     this.deletingCheckpointId.set(null);
     this.renameDraft.set(checkpoint.name);
-    queueMicrotask(() => {
-      const input = this.checkpointDialog()?.nativeElement.querySelector<HTMLInputElement>(
-        '.inspector-command-row__rename',
-      );
-      input?.focus();
-      input?.select();
-    });
   }
 
   updateRenameDraft(event: Event) {
@@ -653,13 +649,6 @@ export class inspectorComponent implements OnDestroy {
     this.draggingGuideId = null;
     this.clearGuides();
     this.refreshTypographyBlocks();
-  }
-
-  private normalizeCheckpointLabel(value: string) {
-    return value
-      .trim()
-      .toLocaleLowerCase()
-      .replace(/^\/+|\/+$/g, '');
   }
 
   @HostListener('window:pointermove', ['$event'])
