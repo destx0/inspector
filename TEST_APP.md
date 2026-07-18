@@ -26,7 +26,7 @@ Start the shell after both remotes report ready, then open `http://localhost:420
 1. Complete customer name, account type, amount, and terms, then continue to summary.
 2. Open the command palette and use the compact Save action. There is no naming dialog.
 3. Return to the workflow and change the values.
-4. Press `Ctrl/Cmd+Shift+P`, select the saved checkpoint using fuzzy search, and press `Enter`.
+4. Press `Alt+P`, select the saved checkpoint using fuzzy search, and press `Enter`.
 5. Confirm that the original values return and the shell navigates to the route where the checkpoint was saved.
 6. Reload the shell and confirm the checkpoint still appears in the command bar.
 

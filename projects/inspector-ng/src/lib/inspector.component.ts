@@ -48,7 +48,7 @@ import { BUNNY_PET_SPRITE_SRC } from './pet-bunny';
 import { GENERATED_PET_SPRITES } from './generated-pets';
 import { GENERATED_EXTRA_PET_SPRITES } from './generated-pets-extra';
 
-type InspectorCommandActionId = 'select' | 'type' | 'save' | 'vertical' | 'horizontal' | 'off';
+type InspectorCommandActionId = 'select' | 'type' | 'save' | 'vertical' | 'horizontal';
 
 interface InspectorCommandAction {
   readonly id: InspectorCommandActionId;
@@ -59,11 +59,10 @@ interface InspectorCommandAction {
 
 const INSPECTOR_COMMAND_ACTIONS: readonly InspectorCommandAction[] = [
   { id: 'save', label: 'Save', ariaLabel: 'Save checkpoint', keywords: 'save checkpoint capture state' },
-  { id: 'select', label: 'Select', ariaLabel: 'Select mode', keywords: 'select inspect pointer element' },
   { id: 'type', label: 'Type', ariaLabel: 'Toggle typography overlay', keywords: 'type typography text overlay' },
   { id: 'vertical', label: 'V', ariaLabel: 'Vertical guides', keywords: 'vertical v guide guides' },
   { id: 'horizontal', label: 'H', ariaLabel: 'Horizontal guides', keywords: 'horizontal h guide guides' },
-  { id: 'off', label: 'Off', ariaLabel: 'Disable inspector', keywords: 'off disable inspector power' },
+  { id: 'select', label: 'Inspect', ariaLabel: 'Inspect mode', keywords: 'inspect select pointer element alt i' },
 ];
 
 const INSPECTOR_PETS = [
@@ -301,6 +300,7 @@ export class inspectorComponent implements OnDestroy {
   private draggingGuideId: string | null = null;
   private selectedElement: HTMLElement | null = null;
   private hoverElement: HTMLElement | null = null;
+  private hasSelectedPet = false;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(@Inject(PLATFORM_ID) platformId: object) {
@@ -371,6 +371,7 @@ export class inspectorComponent implements OnDestroy {
 
   async openCheckpointCommandBar() {
     if (!this.checkpointService || !this.isBrowser || this.commandBarOpen()) return;
+    this.randomizePet();
     this.commandBarOpen.set(true);
     this.checkpointQuery.set('');
     this.activeCommandIndex.set(0);
@@ -401,7 +402,7 @@ export class inspectorComponent implements OnDestroy {
 
   cyclePet(event?: Event) {
     event?.stopPropagation();
-    this.petIndex.update((index) => (index + 1) % INSPECTOR_PETS.length);
+    this.randomizePet();
     this.checkpointSearch()?.nativeElement.focus();
   }
 
@@ -443,10 +444,6 @@ export class inspectorComponent implements OnDestroy {
       case 'horizontal':
         this.activateGuideOrientation('horizontal');
         this.closeCheckpointCommandBar();
-        break;
-      case 'off':
-        this.closeCheckpointCommandBar();
-        this.disableInspector();
         break;
     }
   }
@@ -544,7 +541,14 @@ export class inspectorComponent implements OnDestroy {
   }
 
   formatEdges(edges: InspectMeasurement['padding']) {
-    return `${formatValue(edges.top)} ${formatValue(edges.right)} ${formatValue(edges.bottom)} ${formatValue(edges.left)}`;
+    const top = String(formatValue(edges.top));
+    const right = String(formatValue(edges.right));
+    const bottom = String(formatValue(edges.bottom));
+    const left = String(formatValue(edges.left));
+    if (top === right && top === bottom && top === left) return top;
+    if (top === bottom && right === left) return `${top} ${right}`;
+    if (right === left) return `${top} ${right} ${bottom}`;
+    return `${top} ${right} ${bottom} ${left}`;
   }
 
   formatGap(selected: InspectMeasurement) {
@@ -558,12 +562,42 @@ export class inspectorComponent implements OnDestroy {
     if (
       this.checkpointService &&
       !event.repeat &&
-      (event.metaKey || event.ctrlKey) &&
-      event.shiftKey &&
+      event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.shiftKey &&
       key === 'p'
     ) {
       event.preventDefault();
       this.commandBarOpen() ? this.closeCheckpointCommandBar() : void this.openCheckpointCommandBar();
+      return;
+    }
+
+    if (
+      !event.repeat &&
+      event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.shiftKey &&
+      key === 'i'
+    ) {
+      event.preventDefault();
+      this.setToolMode('select');
+      if (this.commandBarOpen()) this.closeCheckpointCommandBar();
+      return;
+    }
+
+    if (
+      this.checkpointService &&
+      !event.repeat &&
+      event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.shiftKey &&
+      key === 's'
+    ) {
+      event.preventDefault();
+      void this.saveCheckpoint();
       return;
     }
 
@@ -792,9 +826,21 @@ export class inspectorComponent implements OnDestroy {
       return;
     }
     if (isRenameInput) return;
+    if (key === 'f2' && activeCheckpoint) {
+      event.preventDefault();
+      this.beginRename(activeCheckpoint);
+      return;
+    }
+    if (key === 'delete' && activeCheckpoint) {
+      event.preventDefault();
+      void this.confirmDelete(activeCheckpoint);
+      return;
+    }
     if (key === 'arrowdown') {
       event.preventDefault();
-      if (activeCheckpoint) {
+      if (activeAction && checkpoints.length) {
+        this.activeCommandIndex.set(0);
+      } else if (activeCheckpoint) {
         const nextIndex = this.activeCommandIndex() < checkpoints.length - 1
           ? this.activeCommandIndex() + 1
           : actions.length ? checkpoints.length : this.activeCommandIndex();
@@ -808,7 +854,12 @@ export class inspectorComponent implements OnDestroy {
       if (activeAction && checkpoints.length) {
         this.activeCommandIndex.set(checkpoints.length - 1);
       } else if (activeCheckpoint) {
-        this.activeCommandIndex.set(Math.max(0, this.activeCommandIndex() - 1));
+        const nextIndex = this.activeCommandIndex() > 0
+          ? this.activeCommandIndex() - 1
+          : actions.length
+            ? checkpoints.length + actions.length - 1
+            : 0;
+        this.activeCommandIndex.set(nextIndex);
       }
       this.scrollActiveCommandIntoView();
       return;
@@ -822,9 +873,12 @@ export class inspectorComponent implements OnDestroy {
       this.scrollActiveCommandIntoView();
       return;
     }
-    if (key === 'arrowleft' && activeAction) {
+    if (key === 'arrowleft' && (activeCheckpoint || activeAction) && actions.length) {
       event.preventDefault();
-      this.activeCommandIndex.set(checkpoints.length + Math.max(0, activeActionIndex - 1));
+      const nextActionIndex = activeAction
+        ? (activeActionIndex - 1 + actions.length) % actions.length
+        : actions.length - 1;
+      this.activeCommandIndex.set(checkpoints.length + nextActionIndex);
       this.scrollActiveCommandIntoView();
       return;
     }
@@ -913,9 +967,7 @@ export class inspectorComponent implements OnDestroy {
       !this.altPressed() ||
       !this.selectedElement ||
       !this.hoverElement ||
-      this.selectedElement === this.hoverElement ||
-      this.selectedElement.contains(this.hoverElement) ||
-      this.hoverElement.contains(this.selectedElement)
+      this.selectedElement === this.hoverElement
     ) {
       this.distanceOverlay.set(null);
       return;
@@ -954,6 +1006,20 @@ export class inspectorComponent implements OnDestroy {
           },
         })),
     );
+  }
+
+  private randomizePet() {
+    const currentIndex = this.hasSelectedPet ? this.petIndex() : null;
+    const availableCount = currentIndex === null
+      ? INSPECTOR_PETS.length
+      : INSPECTOR_PETS.length - 1;
+    const randomOffset = Math.floor(Math.random() * availableCount);
+    this.petIndex.set(
+      currentIndex === null
+        ? randomOffset
+        : (currentIndex + 1 + randomOffset) % INSPECTOR_PETS.length,
+    );
+    this.hasSelectedPet = true;
   }
 
   private addGuide(guide: Guide) {

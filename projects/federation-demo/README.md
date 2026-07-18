@@ -32,9 +32,9 @@ Open `http://localhost:4200/workflow`.
 ## Manual checkpoint flow
 
 1. Complete both workflow steps and open the summary.
-2. Open the command palette with `Ctrl/Cmd+Shift+P`, then choose Save. It saves immediately with a route-based name.
+2. Open the command palette with `Alt+P`, then choose Save. It saves immediately with a route-based name.
 3. Return to the workflow and change the values.
-4. Press `Ctrl/Cmd+Shift+P`, fuzzy-search the saved name, and press `Enter`.
+4. Press `Alt+P`, fuzzy-search the saved name, and press `Enter`.
 5. Confirm that the restored NgRx state appears and the shell navigates back to the checkpoint route.
 6. Reload the shell and reopen the command bar to confirm the catalog remains in IndexedDB.
 

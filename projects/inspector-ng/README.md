@@ -53,7 +53,7 @@ Place `<inspector-overlay>` in your root template (e.g. `app.component.html`). I
 
 ### Step 3: Open the command palette
 
-That's it. Press **`Ctrl/Cmd + Shift + P`** in your browser to open the Inspector command palette. No further configuration is required.
+That's it. Press **`Alt + P`** in your browser to open the Inspector command palette. No further configuration is required.
 
 ## Configuration
 
@@ -73,11 +73,11 @@ export const appConfig: ApplicationConfig = {
 };
 ```
 
-Use the compact Save action in the command palette to capture the current JSON-serializable NgRx root state immediately. `Ctrl/Cmd+Shift+P` opens the fuzzy checkpoint finder. Rename and delete remain explicit buttons on each record.
+Use the compact Save action in the command palette to capture the current JSON-serializable NgRx root state immediately. `Alt+P` opens the fuzzy checkpoint finder. Rename and delete remain explicit buttons on each record.
 
 Records are stored per origin in IndexedDB database `inspector-ng`, object store `checkpoints`. This needs no browser permission prompt and does not map to a visible or fixed OS path. Nothing is evicted automatically. Existing `inspector-checkpoints-v1` localStorage records are deliberately ignored.
 
-A checkpoint contains the root Store value and current route. Restore dispatches `[Inspector Checkpoints] Restore`, then navigates through Angular Router to the saved route, so NgRx Store DevTools records the state change normally. It does not restore action history, component-local state, HTTP activity, or backend state. Native Redux DevTools Import/Export files remain separate and cannot be searched from the Inspector command bar.
+A checkpoint contains the root Store value and current route. Restore dispatches `[Inspector Checkpoints] Restore`, navigates through Angular Router, then dispatches the restore again after a short settle delay, so route initialization cannot overwrite the checkpoint. NgRx Store DevTools records both state changes normally. It does not restore action history, component-local state, HTTP activity, or backend state. Native Redux DevTools Import/Export files remain separate and cannot be searched from the Inspector command bar.
 
 ### Inputs
 
@@ -101,8 +101,10 @@ A checkpoint contains the root Store value and current route. Restore dispatches
 
 | Key | Action |
 |---|---|
-| `Ctrl/Cmd + Shift + P` | Open the Inspector command palette when configured |
-| `Alt` (hold) | Measure the pixel distance between the selected and hovered elements in Select mode |
+| `Alt + P` | Open the Inspector command palette when configured |
+| `Alt + I` | Toggle Inspect mode |
+| `Alt + S` | Save a checkpoint when checkpoint support is installed |
+| `Alt` (hold) | Measure the pixel distance between the selected and hovered elements in Inspect mode |
 | `Ctrl/Cmd + click` | Select the minimum common parent of the current selection and clicked element |
 | `Esc` | Clear selections, guides, and transient overlays |
 
@@ -111,7 +113,7 @@ A checkpoint contains the root Store value and current route. Restore dispatches
 - **Element Inspection** — Click any element to see its bounding box, padding, margin, font size, line height, color, and more.
 - **Typography Overlay** — Annotate all visible text blocks with their computed typography styles.
 - **Alignment Guides** — Place draggable vertical/horizontal guides with snap-to behavior.
-- **Distance Measurement** — Hold `Alt` in Select mode to measure between the selected and hovered elements.
+- **Distance Measurement** — Hold `Alt` in Inspect mode to measure between separate elements or from a nested element to all four parent boundaries.
 - **Gap Detection** — Detects and displays flex/grid gap values.
 - **State Persistence** — Optionally saves and restores state across page reloads.
 - **SSR-Safe** — Uses `isPlatformBrowser` to avoid running on the server.

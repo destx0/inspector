@@ -126,7 +126,10 @@
                   />
                 } @else {
                   <span class="inspector-command-row__content">
-                    <span class="inspector-command-row__name">
+                    <span
+                      class="inspector-command-row__name"
+                      [title]="checkpoint.name"
+                    >
                       @if (
                         checkpointService.busy() &&
                         activeCommandIndex() === index
@@ -136,24 +139,22 @@
                         {{ checkpoint.name }}
                       }
                     </span>
-                    <span class="inspector-command-row__meta">
-                      @if (shouldShowCheckpointRoute(checkpoint)) {
-                        <span class="inspector-command-row__route">{{
-                          checkpoint.route
-                        }}</span>
-                        <span
-                          class="inspector-command-row__separator"
-                          aria-hidden="true"
-                          >·</span
-                        >
-                      }
-                      <span class="inspector-command-row__activity">
-                        {{ checkpoint.lastUsedAt ? "Used" : "Saved" }}
-                        {{
-                          formatRelativeTime(checkpointActivityAt(checkpoint))
-                        }}
-                      </span>
+                    <span class="inspector-command-row__activity">
+                      {{ checkpoint.lastUsedAt ? "Used" : "Saved" }}
+                      {{
+                        formatRelativeTime(checkpointActivityAt(checkpoint))
+                      }}
                     </span>
+                    @if (
+                      activeCommandIndex() === index &&
+                      shouldShowCheckpointRoute(checkpoint)
+                    ) {
+                      <span
+                        class="inspector-command-row__route"
+                        [title]="checkpoint.route"
+                        >{{ checkpoint.route }}</span
+                      >
+                    }
                   </span>
                   <span class="inspector-command-row__actions">
                     <button
@@ -222,7 +223,6 @@
                     toolMode() === 'guides' &&
                     guideOrientation() === 'horizontal')
                 "
-                [class.inspector-command-action--danger]="action.id === 'off'"
                 [disabled]="checkpointService.busy()"
                 (mouseenter)="setActiveInspectorAction(index)"
                 (click)="executeInspectorAction(action)"
@@ -253,13 +253,6 @@
                   @case ("horizontal") {
                     <svg viewBox="0 0 16 16" aria-hidden="true">
                       <path d="M2 7.25h12v1.5H2z" />
-                    </svg>
-                  }
-                  @case ("off") {
-                    <svg viewBox="0 0 16 16" aria-hidden="true">
-                      <path
-                        d="M7.25 1.5h1.5v6h-1.5zM4.1 3.35l.96 1.15A4.25 4.25 0 1 0 10.94 4.5l.96-1.15A5.75 5.75 0 1 1 4.1 3.35z"
-                      />
                     </svg>
                   }
                 }
@@ -319,13 +312,6 @@
         [style.width.px]="selected.marginRect.width"
         [style.height.px]="selected.marginRect.height"
       ></div>
-      <div
-        class="inspector-box-tag inspector-box-tag--margin"
-        [style.left.px]="selected.marginRect.left"
-        [style.top.px]="selected.marginRect.top - 8"
-      >
-        M {{ formatEdges(selected.margin) }}
-      </div>
 
       <div
         class="inspector-box inspector-box--selected"
@@ -346,13 +332,15 @@
         [style.height.px]="selected.paddingRect.height"
       ></div>
       <div
-        class="inspector-box-tag inspector-box-tag--padding"
-        [style.left.px]="selected.paddingRect.left"
-        [style.top.px]="
-          selected.paddingRect.top + selected.paddingRect.height + 8
-        "
+        class="inspector-box-tag inspector-box-tag--spacing"
+        [style.left.px]="selected.rect.left"
+        [style.top.px]="selected.rect.top + selected.rect.height + 8"
       >
-        P {{ formatEdges(selected.padding) }}
+        <span class="inspector-box-tag__margin">M</span>
+        <span>{{ formatEdges(selected.margin) }}</span>
+        <span class="inspector-box-tag__separator">·</span>
+        <span class="inspector-box-tag__padding">P</span>
+        <span>{{ formatEdges(selected.padding) }}</span>
       </div>
     }
   }
@@ -406,44 +394,40 @@
       ></div>
     }
 
-    @if (distance.horizontal && distance.horizontal.value > 0) {
-      <div
-        class="inspector-distance-line inspector-distance-line--horizontal"
-        [style.left.px]="
-          Math.min(distance.horizontal.x1!, distance.horizontal.x2!)
-        "
-        [style.top.px]="distance.horizontal.y!"
-        [style.width.px]="
-          Math.abs(distance.horizontal.x2! - distance.horizontal.x1!)
-        "
-      ></div>
-      <div
-        class="inspector-distance-tag"
-        [style.left.px]="
-          (distance.horizontal.x1! + distance.horizontal.x2!) / 2
-        "
-        [style.top.px]="distance.horizontal.y! + 10"
-      >
-        {{ formatValue(distance.horizontal.value) }}
-      </div>
+    @for (horizontal of distance.horizontalDistances; track $index) {
+      @if (horizontal.value > 0) {
+        <div
+          class="inspector-distance-line inspector-distance-line--horizontal"
+          [style.left.px]="Math.min(horizontal.x1!, horizontal.x2!)"
+          [style.top.px]="horizontal.y!"
+          [style.width.px]="Math.abs(horizontal.x2! - horizontal.x1!)"
+        ></div>
+        <div
+          class="inspector-distance-tag"
+          [style.left.px]="(horizontal.x1! + horizontal.x2!) / 2"
+          [style.top.px]="horizontal.y! + 10"
+        >
+          {{ formatValue(horizontal.value) }}
+        </div>
+      }
     }
 
-    @if (distance.vertical && distance.vertical.value > 0) {
-      <div
-        class="inspector-distance-line inspector-distance-line--vertical"
-        [style.left.px]="distance.vertical.x!"
-        [style.top.px]="Math.min(distance.vertical.y1!, distance.vertical.y2!)"
-        [style.height.px]="
-          Math.abs(distance.vertical.y2! - distance.vertical.y1!)
-        "
-      ></div>
-      <div
-        class="inspector-distance-tag inspector-distance-tag--vertical"
-        [style.left.px]="distance.vertical.x! + 10"
-        [style.top.px]="(distance.vertical.y1! + distance.vertical.y2!) / 2"
-      >
-        {{ formatValue(distance.vertical.value) }}
-      </div>
+    @for (vertical of distance.verticalDistances; track $index) {
+      @if (vertical.value > 0) {
+        <div
+          class="inspector-distance-line inspector-distance-line--vertical"
+          [style.left.px]="vertical.x!"
+          [style.top.px]="Math.min(vertical.y1!, vertical.y2!)"
+          [style.height.px]="Math.abs(vertical.y2! - vertical.y1!)"
+        ></div>
+        <div
+          class="inspector-distance-tag inspector-distance-tag--vertical"
+          [style.left.px]="vertical.x! + 10"
+          [style.top.px]="(vertical.y1! + vertical.y2!) / 2"
+        >
+          {{ formatValue(vertical.value) }}
+        </div>
+      }
     }
   }
 

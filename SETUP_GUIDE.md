@@ -104,12 +104,12 @@ That is the complete checkpoint setup. No adapter, registry, service call, brows
 ## Use checkpoints
 
 1. Open any route in the application.
-2. Open the command palette with `Ctrl/Cmd+Shift+P`, then choose Save. Saving is immediate and automatically named from the route, such as `/summary` or `/summary 2`.
+2. Open the command palette with `Alt+P`, then choose Save. Saving is immediate and automatically named from the route, such as `/summary` or `/summary 2`.
 3. Change application state or navigate elsewhere.
-4. Press `Ctrl+Shift+P` on Windows/Linux or `Cmd+Shift+P` on macOS.
+4. Press `Alt+P`.
 5. Type part of the checkpoint name and press `Enter`.
 
-Restore replaces the complete NgRx root state first and then navigates through Angular Router to the saved route. The command palette works while an application input is focused and while the Inspector is disabled.
+Restore replaces the complete NgRx root state, navigates through Angular Router to the saved route, then reapplies the state after a short settle delay. The command palette works while an application input is focused and while the Inspector is disabled.
 
 Command-palette navigation:
 

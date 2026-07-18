@@ -19,7 +19,7 @@ import {
       @if (isEmpty(state())) {
         <div class="empty" data-testid="summary-empty">
           <p>No workflow state yet.</p>
-          <p>Complete the form under Workflow, or restore a checkpoint with Ctrl/Cmd+Shift+P.</p>
+          <p>Complete the form under Workflow, or restore a checkpoint with Alt+P.</p>
           <a routerLink="/workflow">Go to workflow</a>
         </div>
       } @else {

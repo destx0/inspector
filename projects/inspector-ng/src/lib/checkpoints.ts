@@ -37,6 +37,7 @@ const RESTORE_CHECKPOINT = '[Inspector Checkpoints] Restore';
 const DATABASE_NAME = 'inspector-ng';
 const DATABASE_VERSION = 1;
 const STORE_NAME = 'checkpoints';
+const RESTORE_SETTLE_DELAY_MS = 100;
 
 export const INSPECTOR_CHECKPOINT_REPOSITORY =
   new InjectionToken<InspectorCheckpointRepository>('INSPECTOR_CHECKPOINT_REPOSITORY');
@@ -224,7 +225,7 @@ export class InspectorCheckpointService {
         checkpoint.state,
         `“${checkpoint.name}” could not be decoded. Delete it and save a new checkpoint.`,
       );
-      this.store.dispatch({ type: RESTORE_CHECKPOINT, state } as RestoreCheckpointAction);
+      this.restoreState(state);
       if (
         this.router &&
         this.router.url !== checkpoint.route &&
@@ -232,6 +233,8 @@ export class InspectorCheckpointService {
       ) {
         throw new Error(`The state was restored, but navigation to “${checkpoint.route}” was cancelled.`);
       }
+      await delay(RESTORE_SETTLE_DELAY_MS);
+      this.restoreState(state);
       const recentlyUsedCheckpoint = {
         ...checkpoint,
         lastUsedAt: new Date().toISOString(),
@@ -299,6 +302,10 @@ export class InspectorCheckpointService {
     this.error.set(null);
   }
 
+  private restoreState(state: unknown): void {
+    this.store?.dispatch({ type: RESTORE_CHECKPOINT, state } as RestoreCheckpointAction);
+  }
+
   private currentRoute(): string {
     if (!isPlatformBrowser(this.platformId)) return '/';
     return `${this.currentPathname()}${window.location.search}${window.location.hash}`;
@@ -323,6 +330,10 @@ export class InspectorCheckpointService {
   private messageFor(error: unknown, fallback: string): string {
     return error instanceof Error && error.message ? error.message : fallback;
   }
+}
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
 export function provideInspectorCheckpoints(): EnvironmentProviders {

@@ -82,6 +82,8 @@ export type DistanceOverlay = {
   rectB: Rect;
   horizontal: DistanceAxis | null;
   vertical: DistanceAxis | null;
+  horizontalDistances: DistanceAxis[];
+  verticalDistances: DistanceAxis[];
   connectors: Array<{
     x1: number;
     y1: number;

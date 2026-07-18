@@ -87,10 +87,20 @@ describe('NgRx checkpoints', () => {
       createdAt: '2026-01-01T00:00:00.000Z',
       state: { test: { count: 7 } },
     }];
+    const dispatch = spyOn(store, 'dispatch').and.callThrough();
+    router.navigateByUrl.and.callFake(async () => {
+      expect(dispatch.calls.count()).toBe(1);
+      return true;
+    });
 
     expect(await service.restore('summary')).toBeTrue();
     expect((await firstValueFrom(store.pipe(take(1)))).test.count).toBe(7);
     expect(router.navigateByUrl).toHaveBeenCalledWith('/summary?mode=review#details');
+    expect(dispatch.calls.count()).toBe(2);
+    expect(dispatch.calls.allArgs().map(([action]) => action.type)).toEqual([
+      '[Inspector Checkpoints] Restore',
+      '[Inspector Checkpoints] Restore',
+    ]);
   });
 
   it('does not navigate when the saved route is already active', async () => {
