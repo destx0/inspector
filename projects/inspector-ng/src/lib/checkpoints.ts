@@ -392,8 +392,14 @@ export function resolveRouteQuery(query: string, basePathname: string): string |
   if (raw.startsWith('/')) return raw;
   if (raw === '.' || raw === '..' || raw.startsWith('./') || raw.startsWith('../')) {
     const base = basePathname.startsWith('/') ? basePathname : `/${basePathname}`;
-    const url = new URL(raw, `http://inspector.local${base}`);
-    return `${url.pathname}${url.search}${url.hash}`;
+    // Resolve against the current route as a directory: "./x" appends to it
+    // and "../x" moves up one route level, like Angular's relative navigation.
+    const directory = base.endsWith('/') ? base : `${base}/`;
+    const url = new URL(raw, `http://inspector.local${directory}`);
+    const pathname = url.pathname.length > 1 && url.pathname.endsWith('/')
+      ? url.pathname.slice(0, -1)
+      : url.pathname;
+    return `${pathname}${url.search}${url.hash}`;
   }
   return null;
 }

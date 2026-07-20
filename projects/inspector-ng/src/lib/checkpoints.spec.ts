@@ -245,12 +245,18 @@ describe('checkpoint helpers', () => {
       .toBe('/summary?mode=review#details');
   });
 
-  it('resolves relative route queries against the current pathname', () => {
-    expect(resolveRouteQuery('../next-page', '/workflow/step1')).toBe('/next-page');
-    expect(resolveRouteQuery('./sibling', '/workflow/step1')).toBe('/workflow/sibling');
-    expect(resolveRouteQuery('..', '/workflow/step1')).toBe('/');
-    expect(resolveRouteQuery('../next?x=1#top', '/a/b')).toBe('/next?x=1#top');
-    expect(resolveRouteQuery('  ../spaced  ', '/a/b')).toBe('/spaced');
+  it('resolves relative route queries against the current route as a directory', () => {
+    expect(resolveRouteQuery('./next-page', '/workflow')).toBe('/workflow/next-page');
+    expect(resolveRouteQuery('./detail', '/workflow/step1')).toBe('/workflow/step1/detail');
+    expect(resolveRouteQuery('../next-page', '/workflow/step1')).toBe('/workflow/next-page');
+    expect(resolveRouteQuery('../next-page', '/workflow')).toBe('/next-page');
+    expect(resolveRouteQuery('..', '/workflow/step1')).toBe('/workflow');
+    expect(resolveRouteQuery('.', '/workflow/step1')).toBe('/workflow/step1');
+    expect(resolveRouteQuery('../../top', '/a/b')).toBe('/top');
+    expect(resolveRouteQuery('../../../clamped', '/a/b')).toBe('/clamped');
+    expect(resolveRouteQuery('../next', '/')).toBe('/next');
+    expect(resolveRouteQuery('../next?x=1#top', '/a/b')).toBe('/a/next?x=1#top');
+    expect(resolveRouteQuery('  ../spaced  ', '/a/b')).toBe('/a/spaced');
   });
 
   it('treats non-route queries as checkpoint searches', () => {
