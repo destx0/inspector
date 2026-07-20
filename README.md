@@ -140,6 +140,7 @@ Example:
 | `Alt + P` | Open the Inspector command palette (when checkpoint providers are installed) |
 | `Alt + I` | Toggle Inspect mode |
 | `Alt + S` | Save a checkpoint when checkpoint support is installed |
+| `Shift + Enter` | In the palette: navigate to the highlighted checkpoint's route without restoring its state (`Shift + click` a row does the same) |
 | `Alt` (hold) | Measure the pixel distance between the selected and hovered elements in Inspect mode |
 | `Ctrl/Cmd + click` | Select the minimum common parent of the current selection and clicked element |
 | `Esc` | Clear selections, guides, and transient overlays |
@@ -167,6 +168,8 @@ export const appConfig: ApplicationConfig = {
 Press `Alt+P` to open the command palette, then choose Save. Saving captures a JSON-serializable clone of the current NgRx root state and gives it a route-based name such as `/summary 2`. The shortcut works anywhere in the application—even when an input is focused or the Inspector is disabled—and the same palette can fuzzy-search, restore, rename, or delete saved checkpoints.
 
 Checkpoints live in the `inspector-ng` IndexedDB database for the current browser origin. Browser storage needs no permission prompt, has no fixed or configurable filesystem path, is not shared across origins, and is kept until the user deletes it or clears site data. Existing `inspector-checkpoints-v1` localStorage records are not migrated.
+
+The palette can also navigate without touching the NgRx state. `Shift+Enter` (or `Shift+click`) on a checkpoint opens its saved route and leaves the current state exactly as it is. Typing a route directly into the search box shows a `Go to …` result: absolute paths like `/summary` are used as-is, while `./sibling` and `../next-page` resolve against the current URL. When no checkpoint matches such a query, `Enter` simply navigates.
 
 Only the current NgRx root state and route are captured. Restore replaces the Store state, navigates through Angular Router to the saved route, then reapplies the state after a short settle delay so route initialization cannot overwrite the checkpoint. It does not replay action history, restore component-local state, replay HTTP calls, or change backend data. Redux DevTools observes both restore dispatches as normal `[Inspector Checkpoints] Restore` actions. Its native Import/Export files remain separate from the searchable Inspector catalog.
 

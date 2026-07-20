@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
-import { Action, provideStore } from "@ngrx/store";
+import { Router } from "@angular/router";
+import { Action, Store, provideStore } from "@ngrx/store";
 
 import {
   INSPECTOR_CHECKPOINT_REPOSITORY,
@@ -7,6 +8,7 @@ import {
   InspectorCheckpointRepository,
   InspectorCheckpointService,
   provideInspectorCheckpoints,
+  resolveRouteQuery,
 } from "./checkpoints";
 import { inspectorComponent } from "./inspector.component";
 
@@ -90,6 +92,7 @@ describe("inspectorComponent checkpoint command bar", () => {
   let component: inspectorComponent;
   let repository: MemoryRepository;
   let service: InspectorCheckpointService;
+  let router: jasmine.SpyObj<Router>;
 
   const records: InspectorCheckpointRecord[] = [
     {
@@ -113,12 +116,15 @@ describe("inspectorComponent checkpoint command bar", () => {
   beforeEach(async () => {
     repository = new MemoryRepository();
     repository.records = structuredClone(records);
+    router = jasmine.createSpyObj<Router>("Router", ["navigateByUrl"], { url: "/" });
+    router.navigateByUrl.and.resolveTo(true);
     await TestBed.configureTestingModule({
       imports: [inspectorComponent],
       providers: [
         provideStore({ test: reducer }),
         provideInspectorCheckpoints(),
         { provide: INSPECTOR_CHECKPOINT_REPOSITORY, useValue: repository },
+        { provide: Router, useValue: router },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(inspectorComponent);
@@ -409,6 +415,113 @@ describe("inspectorComponent checkpoint command bar", () => {
     expect(toastStyle.display).toBe("flex");
     expect(toastStyle.borderRadius).toBe("6px");
     expect(getComputedStyle(toast, "::before").width).toBe("5px");
+  });
+
+  it("navigates to the active checkpoint with Shift+Enter, keeping state", async () => {
+    await openCommandBar();
+    const store = TestBed.inject(Store);
+    const dispatch = spyOn(store, "dispatch").and.callThrough();
+    const restore = spyOn(service, "restore").and.resolveTo(true);
+
+    expect(keydown("Enter", { shiftKey: true }).defaultPrevented).toBeTrue();
+    await new Promise((resolve) => setTimeout(resolve));
+    fixture.detectChanges();
+
+    expect(router.navigateByUrl).toHaveBeenCalledWith("/summary");
+    expect(restore).not.toHaveBeenCalled();
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(component.commandBarOpen()).toBeFalse();
+    expect(fixture.nativeElement.textContent).toContain(
+      "Navigated to “/summary” — state unchanged.",
+    );
+  });
+
+  it("navigates with Shift+click on a checkpoint row without restoring", async () => {
+    await openCommandBar();
+    const store = TestBed.inject(Store);
+    const dispatch = spyOn(store, "dispatch").and.callThrough();
+
+    const row = fixture.nativeElement.querySelector(
+      "#inspector-checkpoint-old",
+    ) as HTMLElement;
+    row.dispatchEvent(
+      new MouseEvent("click", { bubbles: true, cancelable: true, shiftKey: true }),
+    );
+    await new Promise((resolve) => setTimeout(resolve));
+    fixture.detectChanges();
+
+    expect(router.navigateByUrl).toHaveBeenCalledWith("/workflow");
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(component.commandBarOpen()).toBeFalse();
+  });
+
+  it("navigates to a typed relative route with Enter, keeping state", async () => {
+    await openCommandBar();
+    const store = TestBed.inject(Store);
+    const dispatch = spyOn(store, "dispatch").and.callThrough();
+    const input = fixture.nativeElement.querySelector(
+      "#inspector-checkpoint-search",
+    ) as HTMLInputElement;
+    input.value = "../next-page";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    fixture.detectChanges();
+
+    const expected = resolveRouteQuery("../next-page", window.location.pathname)!;
+    expect(expected).toBeTruthy();
+    expect(component.navigateTarget()).toBe(expected);
+    expect(component.filteredCheckpoints()).toEqual([]);
+    expect(component.activeCommandResultId()).toBe("inspector-navigate");
+    const navigateRow = fixture.nativeElement.querySelector(
+      "#inspector-navigate",
+    ) as HTMLElement;
+    expect(navigateRow).not.toBeNull();
+    expect(navigateRow.textContent).toContain(`Go to ${expected}`);
+    expect(navigateRow.textContent).toContain("navigate · keeps state");
+
+    keydown("Enter");
+    await new Promise((resolve) => setTimeout(resolve));
+    fixture.detectChanges();
+
+    expect(router.navigateByUrl).toHaveBeenCalledWith(expected);
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(component.commandBarOpen()).toBeFalse();
+    expect(fixture.nativeElement.textContent).toContain(
+      `Navigated to “${expected}” — state unchanged.`,
+    );
+  });
+
+  it("threads arrow navigation between matching checkpoints and the navigate row", async () => {
+    repository.records = [
+      ...structuredClone(records),
+      {
+        version: 1,
+        id: "route",
+        name: "/summary",
+        route: "/summary",
+        createdAt: "2026-01-03T00:00:00.000Z",
+        state: { test: { value: 3 } },
+      },
+    ];
+    await openCommandBar();
+    const input = fixture.nativeElement.querySelector(
+      "#inspector-checkpoint-search",
+    ) as HTMLInputElement;
+    input.value = "/sum";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(component.filteredCheckpoints().map(({ id }) => id)).toEqual(["route"]);
+    expect(component.navigateTarget()).toBe("/sum");
+    expect(component.activeCommandResultId()).toBe("inspector-checkpoint-route");
+
+    keydown("ArrowDown");
+    expect(component.activeCommandResultId()).toBe("inspector-navigate");
+    keydown("ArrowDown");
+    expect(component.activeCommandResultId()).toBe("inspector-navigate");
+    keydown("ArrowUp");
+    expect(component.activeCommandResultId()).toBe("inspector-checkpoint-route");
+    keydown("ArrowUp");
+    expect(component.activeCommandResultId()).toBe("inspector-navigate");
   });
 
   it("renames with F2 and deletes with Delete", async () => {

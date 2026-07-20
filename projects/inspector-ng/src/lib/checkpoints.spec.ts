@@ -12,6 +12,7 @@ import {
   inspectorCheckpointMetaReducer,
   nextAutomaticName,
   provideInspectorCheckpoints,
+  resolveRouteQuery,
 } from './checkpoints';
 
 interface TestState {
@@ -119,6 +120,44 @@ describe('NgRx checkpoints', () => {
     expect(service.error()).toBeNull();
   });
 
+  it('navigates to a route without dispatching a restore or touching records', async () => {
+    repository.records = [{
+      version: 1,
+      id: 'summary',
+      name: '/summary',
+      route: '/summary',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      state: { test: { count: 7 } },
+    }];
+    const dispatch = spyOn(store, 'dispatch').and.callThrough();
+
+    expect(await service.navigateToRoute('/summary?mode=review')).toBeTrue();
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/summary?mode=review');
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(repository.records[0].lastUsedAt).toBeUndefined();
+    expect(service.error()).toBeNull();
+  });
+
+  it('skips navigation when the target route is already active', async () => {
+    expect(await service.navigateToRoute('/current')).toBeTrue();
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+    expect(service.error()).toBeNull();
+  });
+
+  it('reports a cancelled navigation', async () => {
+    router.navigateByUrl.and.resolveTo(false);
+
+    expect(await service.navigateToRoute('/blocked')).toBeFalse();
+    expect(service.error()).toContain('cancelled');
+  });
+
+  it('resolves palette route queries against the current pathname', () => {
+    expect(service.resolveRoute('../next-page')).toBe(
+      resolveRouteQuery('../next-page', window.location.pathname),
+    );
+    expect(service.resolveRoute('not a route')).toBeNull();
+  });
+
   it('rejects a root state that cannot be JSON serialized', async () => {
     const circular: { self?: unknown } = {};
     circular.self = circular;
@@ -199,6 +238,26 @@ describe('NgRx checkpoints', () => {
 describe('checkpoint helpers', () => {
   it('allocates the first free route-based name case-insensitively', () => {
     expect(nextAutomaticName('/summary', ['/SUMMARY', '/summary 3'])).toBe('/summary 2');
+  });
+
+  it('passes absolute route queries through unchanged', () => {
+    expect(resolveRouteQuery('/summary?mode=review#details', '/workflow/step1'))
+      .toBe('/summary?mode=review#details');
+  });
+
+  it('resolves relative route queries against the current pathname', () => {
+    expect(resolveRouteQuery('../next-page', '/workflow/step1')).toBe('/next-page');
+    expect(resolveRouteQuery('./sibling', '/workflow/step1')).toBe('/workflow/sibling');
+    expect(resolveRouteQuery('..', '/workflow/step1')).toBe('/');
+    expect(resolveRouteQuery('../next?x=1#top', '/a/b')).toBe('/next?x=1#top');
+    expect(resolveRouteQuery('  ../spaced  ', '/a/b')).toBe('/spaced');
+  });
+
+  it('treats non-route queries as checkpoint searches', () => {
+    expect(resolveRouteQuery('next-page', '/a/b')).toBeNull();
+    expect(resolveRouteQuery('', '/a/b')).toBeNull();
+    expect(resolveRouteQuery('   ', '/a/b')).toBeNull();
+    expect(resolveRouteQuery('.hidden', '/a/b')).toBeNull();
   });
 
   it('replaces state only for the Inspector restore action', () => {

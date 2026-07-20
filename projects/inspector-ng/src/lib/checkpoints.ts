@@ -254,6 +254,31 @@ export class InspectorCheckpointService {
     }
   }
 
+  async navigateToRoute(route: string): Promise<boolean> {
+    this.error.set(null);
+    if (!this.router) {
+      this.error.set('The Angular Router is unavailable, so the Inspector cannot navigate.');
+      return false;
+    }
+    this.busy.set(true);
+    try {
+      if (this.router.url !== route && !await this.router.navigateByUrl(route)) {
+        throw new Error(`Navigation to “${route}” was cancelled.`);
+      }
+      return true;
+    } catch (error) {
+      this.error.set(this.messageFor(error, 'The route could not be opened.'));
+      return false;
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  resolveRoute(query: string): string | null {
+    if (!isPlatformBrowser(this.platformId)) return null;
+    return resolveRouteQuery(query, this.currentPathname());
+  }
+
   async rename(id: string, name: string): Promise<boolean> {
     this.error.set(null);
     const nextName = name.trim();
@@ -359,6 +384,18 @@ export function nextAutomaticName(route: string, names: string[]): string {
     const candidate = `${route} ${suffix}`;
     if (!used.has(candidate.toLocaleLowerCase())) return candidate;
   }
+}
+
+export function resolveRouteQuery(query: string, basePathname: string): string | null {
+  const raw = query.trim();
+  if (!raw) return null;
+  if (raw.startsWith('/')) return raw;
+  if (raw === '.' || raw === '..' || raw.startsWith('./') || raw.startsWith('../')) {
+    const base = basePathname.startsWith('/') ? basePathname : `/${basePathname}`;
+    const url = new URL(raw, `http://inspector.local${base}`);
+    return `${url.pathname}${url.search}${url.hash}`;
+  }
+  return null;
 }
 
 function cloneJson(

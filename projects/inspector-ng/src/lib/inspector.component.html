@@ -73,7 +73,9 @@
               No checkpoints yet
             </p>
           } @else if (
-            !filteredCheckpoints().length && !filteredInspectorActions().length
+            !filteredCheckpoints().length &&
+            !filteredInspectorActions().length &&
+            !navigateTarget()
           ) {
             <p class="inspector-command__message" role="status">No matches</p>
           } @else {
@@ -93,12 +95,7 @@
                   checkpointService.busy() && activeCommandIndex() === index
                 "
                 (mouseenter)="setActiveCheckpoint(index)"
-                (click)="
-                  deletingCheckpointId() === checkpoint.id ||
-                  editingCheckpointId() === checkpoint.id
-                    ? null
-                    : restoreCheckpoint(checkpoint)
-                "
+                (click)="activateCheckpoint(checkpoint, $event)"
               >
                 @if (deletingCheckpointId() === checkpoint.id) {
                   <span class="inspector-command-row__confirm"
@@ -176,6 +173,47 @@
                 }
               </div>
             }
+            @if (navigateTarget(); as target) {
+              <div
+                class="inspector-command-row inspector-command-row--navigate"
+                role="option"
+                id="inspector-navigate"
+                [attr.data-command-index]="filteredCheckpoints().length"
+                [attr.aria-selected]="
+                  activeCommandIndex() === filteredCheckpoints().length
+                "
+                [class.is-active]="
+                  activeCommandIndex() === filteredCheckpoints().length
+                "
+                [class.is-busy]="
+                  checkpointService.busy() &&
+                  activeCommandIndex() === filteredCheckpoints().length
+                "
+                (mouseenter)="setActiveCheckpoint(filteredCheckpoints().length)"
+                (click)="navigateToQueryRoute()"
+              >
+                <span class="inspector-command-row__content">
+                  <span
+                    class="inspector-command-row__name"
+                    [title]="'Navigate to ' + target"
+                  >
+                    <bdi dir="ltr">
+                      @if (
+                        checkpointService.busy() &&
+                        activeCommandIndex() === filteredCheckpoints().length
+                      ) {
+                        Navigating…
+                      } @else {
+                        Go to {{ target }}
+                      }
+                    </bdi>
+                  </span>
+                  <span class="inspector-command-row__activity">
+                    navigate · keeps state
+                  </span>
+                </span>
+              </div>
+            }
           }
         </div>
 
@@ -197,14 +235,14 @@
                 role="option"
                 class="inspector-command-action"
                 [id]="'inspector-action-' + action.id"
-                [attr.data-command-index]="filteredCheckpoints().length + index"
+                [attr.data-command-index]="actionIndexOffset() + index"
                 [attr.aria-label]="action.ariaLabel"
                 [attr.aria-selected]="
-                  activeCommandIndex() === filteredCheckpoints().length + index
+                  activeCommandIndex() === actionIndexOffset() + index
                 "
                 [attr.aria-disabled]="checkpointService.busy()"
                 [class.is-selected]="
-                  activeCommandIndex() === filteredCheckpoints().length + index
+                  activeCommandIndex() === actionIndexOffset() + index
                 "
                 [class.is-active]="
                   (action.id === 'select' && toolMode() === 'select') ||
